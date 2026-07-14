@@ -33,8 +33,12 @@ async function descargarInforme(fechaEspecifica = null) {
         const diaStr = String(fecha.getDate()).padStart(2, '0');
         const mesStr = String(fecha.getMonth() + 1).padStart(2, '0');
         const anioShort = String(fecha.getFullYear()).slice(-2);
-        const patrones = [`${diaStr}-${mesStr}-${anioShort}`, `${diaStr}-${mesStr}-${fecha.getFullYear()}`];
-
+        
+        const formatoFecha = `${diaStr}-${mesStr}-${anioShort}`;
+        const patrones = [formatoFecha, `${diaStr}-${mesStr}-${fecha.getFullYear()}`];
+        
+        console.log(`Buscando informe con fecha: ${formatoFecha}`);
+        
         let link = null;
         let paginas = 1;
 
@@ -77,11 +81,12 @@ async function descargarInforme(fechaEspecifica = null) {
             const baseDir = path.join(__dirname, 'data');
             const folderPath = path.join(baseDir, anio);
             if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-            const fileName = `INFORME-${diaStr}-${mesStr}-${anioShort}-PRESAS.pdf`;
+            
+            const fileName = `INFORME-${formatoFecha}-PRESAS.pdf`;
             await download.saveAs(path.join(folderPath, fileName));
             console.log(`Guardado en: ${path.join('data', anio, fileName)}`);
         } else {
-            console.log(`No se encontró informe para la fecha: ${diaStr}-${mesStr}-${anioShort}`);
+            console.log(`No se encontró informe para la fecha: ${formatoFecha}`);
         }
 
     } catch (error) {
