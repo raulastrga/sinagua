@@ -28,46 +28,55 @@ async function descargarInforme(fechaEspecifica = null) {
         const mesLink = page.locator(`a.wpfdcategory.catlink[title="${mesCapitalizado}"]`);
         await mesLink.waitFor({ state: 'visible', timeout: 10000 });
         await mesLink.click();
-        await page.waitForSelector('.wpfd_list, .file.pdf', { timeout: 10000 });
+        await page.waitForSelector('.wpfd_list, .wpfd-pagination', { timeout: 10000 });
 
-        // 3. Buscar archivo por patrón de fecha (versátil)
         const diaStr = String(fecha.getDate()).padStart(2, '0');
         const mesStr = String(fecha.getMonth() + 1).padStart(2, '0');
         const anioShort = String(fecha.getFullYear()).slice(-2);
-        const anioLong = String(fecha.getFullYear());
-        
-        // Patrones comunes observados
-        const patrones = [
-            `${diaStr}-${mesStr}-${anioShort}`,
-            `${diaStr}-${mesStr}-${anioLong}`
-        ];
-        
+        const patrones = [`${diaStr}-${mesStr}-${anioShort}`, `${diaStr}-${mesStr}-${fecha.getFullYear()}`];
+
         let link = null;
-        for (const p of patrones) {
-            const found = page.locator(`a.wpfd_downloadlink[title*="${p}"]`).first();
-            if (await found.count() > 0) {
-                link = found;
-                break;
+        let paginas = 1;
+
+        // Bucle de paginación
+        while (true) {
+            console.log(`Buscando en página ${paginas}...`);
+            const todosLosEnlaces = page.locator('a.wpfd_downloadlink');
+            const count = await todosLosEnlaces.count();
+            
+            for (let i = 0; i < count; i++) {
+                const el = todosLosEnlaces.nth(i);
+                const title = await el.getAttribute('title') || '';
+                const text = await el.textContent() || '';
+                if (patrones.some(p => title.includes(p) || text.includes(p))) {
+                    link = el;
+                    break;
+                }
+            }
+
+            if (link) break;
+
+            // Intentar ir a la siguiente página
+            const nextButton = page.locator('a.next.page-numbers');
+            if (await nextButton.count() > 0) {
+                await nextButton.click();
+                await page.waitForTimeout(2000); // Esperar a que cargue la nueva página
+                paginas++;
+            } else {
+                break; // No hay más páginas
             }
         }
 
         if (link) {
             const title = await link.getAttribute('title');
             console.log(`Descargando: ${title}`);
-            
             const [download] = await Promise.all([
                 page.waitForEvent('download'),
                 link.click()
             ]);
-
-            // --- NUEVA LÓGICA DE CARPETAS ---
             const baseDir = path.join(__dirname, 'data');
             const folderPath = path.join(baseDir, anio);
-            
-            if (!fs.existsSync(folderPath)) {
-                fs.mkdirSync(folderPath, { recursive: true });
-            }
-
+            if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
             const fileName = `INFORME-${diaStr}-${mesStr}-${anioShort}-PRESAS.pdf`;
             await download.saveAs(path.join(folderPath, fileName));
             console.log(`Guardado en: ${path.join('data', anio, fileName)}`);
