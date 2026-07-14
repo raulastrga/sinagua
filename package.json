@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "pdf-parse": "^2.4.5",
+    "pdf2json": "^4.0.3",
+    "pdfjs-dist": "^6.1.200",
+    "playwright": "^1.61.1"
+  }
+}
