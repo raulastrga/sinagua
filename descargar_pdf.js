@@ -60,9 +60,17 @@ async function descargarInforme(fechaEspecifica = null) {
                 link.click()
             ]);
 
+            // --- NUEVA LÓGICA DE CARPETAS ---
+            const baseDir = path.join(__dirname, 'data');
+            const folderPath = path.join(baseDir, anio);
+            
+            if (!fs.existsSync(folderPath)) {
+                fs.mkdirSync(folderPath, { recursive: true });
+            }
+
             const fileName = `INFORME-${diaStr}-${mesStr}-${anioShort}-PRESAS.pdf`;
-            await download.saveAs(path.join(__dirname, fileName));
-            console.log(`Guardado como: ${fileName}`);
+            await download.saveAs(path.join(folderPath, fileName));
+            console.log(`Guardado en: ${path.join('data', anio, fileName)}`);
         } else {
             console.log(`No se encontró informe para la fecha: ${diaStr}-${mesStr}-${anioShort}`);
         }

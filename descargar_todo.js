@@ -2,7 +2,7 @@ const { execSync } = require('child_process');
 
 function obtenerFechasDesde2019() {
     const fechas = [];
-    const inicio = new Date('2019-01-01');
+    const inicio = new Date('2019-03-20');
     const fin = new Date(); // Hoy
 
     for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
