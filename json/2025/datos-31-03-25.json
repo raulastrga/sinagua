@@ -1,0 +1,119 @@
+[
+  {
+    "nombre": "Luis Donaldo Colosio",
+    "capacidadConservacion": "4568.0",
+    "elevacionConservacion": "290.00",
+    "capacidadNamo": "3202.2",
+    "elevacionNamo": "274.00",
+    "almacenamientoActualMm3": "107.3",
+    "porcentaje": "3.4"
+  },
+  {
+    "nombre": "Miguel Hidalgo y Costilla",
+    "capacidadConservacion": "4171.3",
+    "elevacionConservacion": "148.00",
+    "capacidadNamo": "3312.9",
+    "elevacionNamo": "142.36",
+    "almacenamientoActualMm3": "299.3",
+    "porcentaje": "9.0"
+  },
+  {
+    "nombre": "Josefa Ortiz de Domínguez",
+    "capacidadConservacion": "695.4",
+    "elevacionConservacion": "112.65",
+    "capacidadNamo": "518.9",
+    "elevacionNamo": "109.50",
+    "almacenamientoActualMm3": "50.7",
+    "porcentaje": "9.8"
+  },
+  {
+    "nombre": "Gustavo Díaz Ordaz",
+    "capacidadConservacion": "2687.1",
+    "elevacionConservacion": "252.50",
+    "capacidadNamo": "1618.8",
+    "elevacionNamo": "237.06",
+    "almacenamientoActualMm3": "254.4",
+    "porcentaje": "15.7"
+  },
+  {
+    "nombre": "Guillermo Blake Aguilar",
+    "capacidadConservacion": "468.6",
+    "elevacionConservacion": "196.61",
+    "capacidadNamo": "294",
+    "elevacionNamo": "188.45",
+    "almacenamientoActualMm3": "59.8",
+    "porcentaje": "20.4"
+  },
+  {
+    "nombre": "Eustaquio Buelna",
+    "capacidadConservacion": "265.0",
+    "elevacionConservacion": "68.85",
+    "capacidadNamo": "80.1",
+    "elevacionNamo": "63.54",
+    "almacenamientoActualMm3": "11.3",
+    "porcentaje": "14.1"
+  },
+  {
+    "nombre": "Adolfo López Mateos",
+    "capacidadConservacion": "4034.5",
+    "elevacionConservacion": "183.48",
+    "capacidadNamo": "3086.6",
+    "elevacionNamo": "176.00",
+    "almacenamientoActualMm3": "145.6",
+    "porcentaje": "4.7"
+  },
+  {
+    "nombre": "Sanalona",
+    "capacidadConservacion": "987.5",
+    "elevacionConservacion": "162.17",
+    "capacidadNamo": "688",
+    "elevacionNamo": "156.20",
+    "almacenamientoActualMm3": "62.2",
+    "porcentaje": "9.0"
+  },
+  {
+    "nombre": "Juan Guerrero Alcocer",
+    "capacidadConservacion": "102.0",
+    "elevacionConservacion": "176.28",
+    "capacidadNamo": "55.0",
+    "elevacionNamo": "168.50",
+    "almacenamientoActualMm3": "6.5",
+    "porcentaje": "11.8"
+  },
+  {
+    "nombre": "José López Portillo",
+    "capacidadConservacion": "3966.2",
+    "elevacionConservacion": "286.95",
+    "capacidadNamo": "2580.2",
+    "elevacionNamo": "272.16",
+    "almacenamientoActualMm3": "200.6",
+    "porcentaje": "7.8"
+  },
+  {
+    "nombre": "Aurelio Benassini V.",
+    "capacidadConservacion": "815.5",
+    "elevacionConservacion": "164.64",
+    "capacidadNamo": "403.9",
+    "elevacionNamo": "154.50",
+    "almacenamientoActualMm3": "91.7",
+    "porcentaje": "22.7"
+  },
+  {
+    "nombre": "Santa Maria",
+    "capacidadConservacion": "980.0",
+    "elevacionConservacion": "196.50",
+    "capacidadNamo": "811.0",
+    "elevacionNamo": "188.50",
+    "almacenamientoActualMm3": "499.9",
+    "porcentaje": "61.6"
+  },
+  {
+    "nombre": "Picachos",
+    "capacidadConservacion": "580.0",
+    "elevacionConservacion": "134.30",
+    "capacidadNamo": "322.1",
+    "elevacionNamo": "273.49",
+    "almacenamientoActualMm3": "272.7",
+    "porcentaje": "84.7"
+  }
+]

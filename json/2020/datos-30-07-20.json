@@ -1,0 +1,146 @@
+[
+  {
+    "nombre": "Luis Donaldo Colosio",
+    "capacidadConservacion": "4568.0",
+    "elevacionConservacion": "290.00",
+    "capacidadNamo": "2409.1",
+    "elevacionNamo": "270.00",
+    "almacenamientoActualMm3": "1381.7",
+    "porcentaje": "57.4"
+  },
+  {
+    "nombre": "Miguel Hidalgo y Costilla",
+    "capacidadConservacion": "4171.3",
+    "elevacionConservacion": "148.00",
+    "capacidadNamo": "3096.6",
+    "elevacionNamo": "140.83",
+    "almacenamientoActualMm3": "1688.4",
+    "porcentaje": "54.5"
+  },
+  {
+    "nombre": "Josefa Ortiz de Domínguez",
+    "capacidadConservacion": "695.4",
+    "elevacionConservacion": "112.65",
+    "capacidadNamo": "518.9",
+    "elevacionNamo": "109.50",
+    "almacenamientoActualMm3": "225.6",
+    "porcentaje": "43.5"
+  },
+  {
+    "nombre": "Gustavo Díaz Ordaz",
+    "capacidadConservacion": "2687.1",
+    "elevacionConservacion": "252.50",
+    "capacidadNamo": "1618.8",
+    "elevacionNamo": "237.06",
+    "almacenamientoActualMm3": "652.5",
+    "porcentaje": "40.3"
+  },
+  {
+    "nombre": "Guillermo Blake Aguilar",
+    "capacidadConservacion": "468.6",
+    "elevacionConservacion": "196.61",
+    "capacidadNamo": "294.0",
+    "elevacionNamo": "188.45",
+    "almacenamientoActualMm3": "65.8",
+    "porcentaje": "22.4"
+  },
+  {
+    "nombre": "Eustaquio Buelna",
+    "capacidadConservacion": "265.0",
+    "elevacionConservacion": "68.85",
+    "capacidadNamo": "80.1",
+    "elevacionNamo": "63.54",
+    "almacenamientoActualMm3": "15.0",
+    "porcentaje": "18.7"
+  },
+  {
+    "nombre": "Adolfo López Mateos",
+    "capacidadConservacion": "4034.5",
+    "elevacionConservacion": "183.48",
+    "capacidadNamo": "3086.6",
+    "elevacionNamo": "176.00",
+    "almacenamientoActualMm3": "1293.2",
+    "porcentaje": "41.9"
+  },
+  {
+    "nombre": "Sanalona",
+    "capacidadConservacion": "987.5",
+    "elevacionConservacion": "162.17",
+    "capacidadNamo": "688.0",
+    "elevacionNamo": "156.20",
+    "almacenamientoActualMm3": "357.8",
+    "porcentaje": "52.0"
+  },
+  {
+    "nombre": "Juan Guerrero Alcocer",
+    "capacidadConservacion": "102.0",
+    "elevacionConservacion": "176.28",
+    "capacidadNamo": "55.0",
+    "elevacionNamo": "168.50",
+    "almacenamientoActualMm3": "15.4",
+    "porcentaje": "28.1"
+  },
+  {
+    "nombre": "José López Portillo",
+    "capacidadConservacion": "3966.2",
+    "elevacionConservacion": "286.95",
+    "capacidadNamo": "2580.2",
+    "elevacionNamo": "272.16",
+    "almacenamientoActualMm3": "910.6",
+    "porcentaje": "35.3"
+  },
+  {
+    "nombre": "Aurelio Benassini V.",
+    "capacidadConservacion": "815.5",
+    "elevacionConservacion": "164.64",
+    "capacidadNamo": "403.9",
+    "elevacionNamo": "154.50",
+    "almacenamientoActualMm3": "158.5",
+    "porcentaje": "39.2"
+  },
+  {
+    "nombre": "Santiago Bayacora",
+    "capacidadConservacion": "133.5",
+    "elevacionConservacion": "1965.94",
+    "capacidadNamo": "130.0",
+    "elevacionNamo": "1959.01",
+    "almacenamientoActualMm3": "120.1",
+    "porcentaje": "92.3"
+  },
+  {
+    "nombre": "Guadalupe Victoria",
+    "capacidadConservacion": "94.6",
+    "elevacionConservacion": "1934.61",
+    "capacidadNamo": "84.9",
+    "elevacionNamo": "1932.53",
+    "almacenamientoActualMm3": "79.3",
+    "porcentaje": "93.4"
+  },
+  {
+    "nombre": "Francisco Villa",
+    "capacidadConservacion": "101.0",
+    "elevacionConservacion": "1996.13",
+    "capacidadNamo": "73.3",
+    "elevacionNamo": "1993.00",
+    "almacenamientoActualMm3": "69.8",
+    "porcentaje": "95.2"
+  },
+  {
+    "nombre": "Caboraca",
+    "capacidadConservacion": "60.0",
+    "elevacionConservacion": "2001.28",
+    "capacidadNamo": "45.0",
+    "elevacionNamo": "1998.25",
+    "almacenamientoActualMm3": "22.3",
+    "porcentaje": "49.5"
+  },
+  {
+    "nombre": "Peña del Aguila",
+    "capacidadConservacion": "55.8",
+    "elevacionConservacion": "1895.27",
+    "capacidadNamo": "28.0",
+    "elevacionNamo": "1892.50",
+    "almacenamientoActualMm3": "18.9",
+    "porcentaje": "67.6"
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "nombre": "Guillermo Blake Aguilar",
+    "capacidadConservacion": "468.6",
+    "elevacionConservacion": "196.61",
+    "capacidadNamo": "294",
+    "elevacionNamo": "188.45",
+    "almacenamientoActualMm3": "143.4",
+    "porcentaje": "48.8"
+  },
+  {
+    "nombre": "Eustaquio Buelna",
+    "capacidadConservacion": "265.0",
+    "elevacionConservacion": "68.85",
+    "capacidadNamo": "80.1",
+    "elevacionNamo": "63.54",
+    "almacenamientoActualMm3": "11.3",
+    "porcentaje": "14.1"
+  },
+  {
+    "nombre": "Sanalona",
+    "capacidadConservacion": "987.5",
+    "elevacionConservacion": "162.17",
+    "capacidadNamo": "688",
+    "elevacionNamo": "156.20",
+    "almacenamientoActualMm3": "224.2",
+    "porcentaje": "32.6"
+  },
+  {
+    "nombre": "Juan Guerrero Alcocer",
+    "capacidadConservacion": "102.0",
+    "elevacionConservacion": "176.28",
+    "capacidadNamo": "55.0",
+    "elevacionNamo": "168.50",
+    "almacenamientoActualMm3": "7.1",
+    "porcentaje": "12.9"
+  },
+  {
+    "nombre": "Aurelio Benassini V.",
+    "capacidadConservacion": "815.5",
+    "elevacionConservacion": "164.64",
+    "capacidadNamo": "403.9",
+    "elevacionNamo": "154.50",
+    "almacenamientoActualMm3": "168.9",
+    "porcentaje": "41.8"
+  },
+  {
+    "nombre": "Picachos",
+    "capacidadConservacion": "580.0",
+    "elevacionConservacion": "134.30",
+    "capacidadNamo": "322.1",
+    "elevacionNamo": "124.70",
+    "almacenamientoActualMm3": "169.4",
+    "porcentaje": "52.6"
+  }
+]

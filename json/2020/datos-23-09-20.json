@@ -1,0 +1,83 @@
+[
+  {
+    "nombre": "Guillermo Blake Aguilar",
+    "capacidadConservacion": "294.0",
+    "elevacionConservacion": "176.73",
+    "capacidadNamo": "129.0",
+    "elevacionNamo": "43.9",
+    "almacenamientoActualMm3": "0.1",
+    "porcentaje": "2.5"
+  },
+  {
+    "nombre": "Eustaquio Buelna",
+    "capacidadConservacion": "80.1",
+    "elevacionConservacion": "61.28",
+    "capacidadNamo": "40.9",
+    "elevacionNamo": "51.0",
+    "almacenamientoActualMm3": "0.3",
+    "porcentaje": "7.1"
+  },
+  {
+    "nombre": "Sanalona",
+    "capacidadConservacion": "688",
+    "elevacionConservacion": "156.10",
+    "capacidadNamo": "683.5",
+    "elevacionNamo": "99.3",
+    "almacenamientoActualMm3": "5.4",
+    "porcentaje": "39.2"
+  },
+  {
+    "nombre": "Juan Guerrero Alcocer",
+    "capacidadConservacion": "55.0",
+    "elevacionConservacion": "158.20",
+    "capacidadNamo": "19.6",
+    "elevacionNamo": "35.7",
+    "almacenamientoActualMm3": "0.6",
+    "porcentaje": "2.8"
+  },
+  {
+    "nombre": "Aurelio Benassini V.",
+    "capacidadConservacion": "403.9",
+    "elevacionConservacion": "150.00",
+    "capacidadNamo": "282.0",
+    "elevacionNamo": "69.8",
+    "almacenamientoActualMm3": "2.7",
+    "porcentaje": "39.9"
+  },
+  {
+    "nombre": "Santiago Bayacora",
+    "capacidadConservacion": "130.0",
+    "elevacionConservacion": "1959.36",
+    "capacidadNamo": "131.8",
+    "elevacionNamo": "101.4",
+    "almacenamientoActualMm3": "-0.2",
+    "porcentaje": "0.1"
+  },
+  {
+    "nombre": "Guadalupe Victoria",
+    "capacidadConservacion": "84.9",
+    "elevacionConservacion": "1930.34",
+    "capacidadNamo": "75.2",
+    "elevacionNamo": "88.6",
+    "almacenamientoActualMm3": "-0.2",
+    "porcentaje": "8.2"
+  },
+  {
+    "nombre": "Francisco Villa",
+    "capacidadConservacion": "73.3",
+    "elevacionConservacion": "1992.42",
+    "capacidadNamo": "69.4",
+    "elevacionNamo": "94.8",
+    "almacenamientoActualMm3": "-0.1",
+    "porcentaje": "0.1"
+  },
+  {
+    "nombre": "Caboraca",
+    "capacidadConservacion": "45.0",
+    "elevacionConservacion": "1998.37",
+    "capacidadNamo": "45.6",
+    "elevacionNamo": "101.3",
+    "almacenamientoActualMm3": "-0.3",
+    "porcentaje": "0.1"
+  }
+]
