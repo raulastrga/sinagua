@@ -23,7 +23,8 @@ const DAM_LOCATIONS = {
 let myChart, myMap, masterData;
 
 async function fetchData() {
-    const response = await fetch('https://raulastrga.github.io/sinagua/src/data/data.json');
+    const timestamp = new Date().getTime();
+    const response = await fetch(`../data/data.json?t=${timestamp}`);
     return await response.json();
 }
 
