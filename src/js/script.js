@@ -23,7 +23,7 @@ const DAM_LOCATIONS = {
 let myChart, myMap, masterData;
 
 async function fetchData() {
-    const response = await fetch('../data/data.json');
+    const response = await fetch('../src/data/data.json');
     return await response.json();
 }
 
