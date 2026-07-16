@@ -24,7 +24,14 @@ let myChart, myMap, masterData;
 
 async function fetchData() {
     const timestamp = new Date().getTime();
-    const response = await fetch(`../data/data.json?t=${timestamp}`);
+    // Probemos usando la ruta absoluta desde la raíz del sitio
+    const response = await fetch(`/sinagua/src/data/data.json?t=${timestamp}`);
+    
+    if (!response.ok) {
+        // Fallback si la ruta absoluta falla
+        const response2 = await fetch(`../data/data.json?t=${timestamp}`);
+        return await response2.json();
+    }
     return await response.json();
 }
 
