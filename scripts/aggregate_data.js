@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const inputDir = '/Users/raulastrga/Desktop/Proyectos/sinagua/JSON';
-const outputFile = '/Users/raulastrga/Desktop/Proyectos/sinagua/public/data.json';
+const outputFile = '/Users/raulastrga/Desktop/Proyectos/sinagua/src/data/data.json';
 
 function parseDate(filename, folder) {
     // Filename format: datos-DD-MM-YY.json
