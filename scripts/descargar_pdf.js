@@ -78,13 +78,13 @@ async function descargarInforme(fechaEspecifica = null) {
                 page.waitForEvent('download'),
                 link.click()
             ]);
-            const baseDir = path.join(__dirname, 'data');
+            const baseDir = path.join(process.cwd(), 'JSON');
             const folderPath = path.join(baseDir, anio);
             if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
             
             const fileName = `INFORME-${formatoFecha}-PRESAS.pdf`;
             await download.saveAs(path.join(folderPath, fileName));
-            console.log(`Guardado en: ${path.join('data', anio, fileName)}`);
+            console.log(`Guardado en: ${path.join('JSON', anio, fileName)}`);
         } else {
             console.log(`No se encontró informe para la fecha: ${formatoFecha}`);
         }

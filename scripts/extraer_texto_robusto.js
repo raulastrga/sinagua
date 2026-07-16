@@ -16,7 +16,7 @@ async function extraerTexto(fechaParam = null) {
     const anioLong = String(fecha.getFullYear());
     
     const nombreArchivo = `INFORME-${diaStr}-${mesStr}-${anioShort}-PRESAS.pdf`;
-    const rutaPDF = path.resolve(__dirname, 'data', anioLong, nombreArchivo);
+    const rutaPDF = path.resolve(process.cwd(), 'JSON', anioLong, nombreArchivo);
 
     if (!fs.existsSync(rutaPDF)) {
         console.log(`Archivo no encontrado: ${rutaPDF}`);
@@ -36,7 +36,7 @@ async function extraerTexto(fechaParam = null) {
         textoCompleto += strings.join(' ') + '\n';
     }
 
-    const docsDir = path.join(__dirname, 'docs', anioLong);
+    const docsDir = path.join(process.cwd(), 'docs', anioLong);
     if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 
     const txtFileName = `texto-${diaStr}-${mesStr}-${anioShort}.txt`;

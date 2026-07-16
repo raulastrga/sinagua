@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 function parsearTextoAJSON_2026(anio) {
-    const carpetaDocs = path.join(__dirname, 'docs', anio);
-    const carpetaJson = path.join(__dirname, 'json', anio);
+    const carpetaDocs = path.join(process.cwd(), 'docs', anio);
+    const carpetaJson = path.join(process.cwd(), 'JSON', anio);
     
     if (!fs.existsSync(carpetaJson)) fs.mkdirSync(carpetaJson, { recursive: true });
 
