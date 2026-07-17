@@ -126,9 +126,11 @@ function renderView(view) {
 function setupEvolutionFilters() {
     const filterContainer = document.getElementById('filterContainer');
     const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
-    if (!currentDam) currentDam = dams[0];
+    const options = ['Todas las presas', ...dams];
+    
+    if (!currentDam) currentDam = options[0];
 
-    const damSelect = createSelect(dams, currentDam, (e) => { currentDam = e.target.value; renderEvolutionChart(); });
+    const damSelect = createSelect(options, currentDam, (e) => { currentDam = e.target.value; renderEvolutionChart(); });
     const periodSelect = createSelect(
         {7: '1 semana', 14: '2 semanas', 30: '1 mes', 90: '3 meses', 365: '1 año', Infinity: 'Histórico'},
         currentPeriod,
@@ -145,8 +147,14 @@ function renderEvolutionChart() {
     const filteredDates = dates.slice(-periodDays);
     
     const chartData = filteredDates.map(date => {
-        const dam = masterData[date].find(d => d.nombre === currentDam);
-        return dam ? parseFloat(dam.porcentaje) : null;
+        const dayEntries = masterData[date];
+        if (currentDam === 'Todas las presas') {
+            const values = dayEntries.map(d => parseFloat(d.porcentaje)).filter(p => !isNaN(p));
+            return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        } else {
+            const dam = dayEntries.find(d => d.nombre === currentDam);
+            return dam ? parseFloat(dam.porcentaje) : null;
+        }
     });
 
     updateChart({
