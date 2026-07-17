@@ -2,7 +2,7 @@ name: Daily Data Update
 
 on:
   schedule:
-    - cron: '0 13 * * *' # Ejecuta todos los días a las 6:00 AM hora de Culiacán (UTC-7)
+    - cron: '0 15 * * *' # Ejecuta todos los días a las 8:00 AM hora de Culiacán (UTC-7)
   workflow_dispatch: # Permite ejecución manual desde la pestaña Actions
 
 permissions:
