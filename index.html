@@ -12,21 +12,15 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-    <!-- Header -->
     <header class="bg-white border-b border-slate-200">
         <div class="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <!-- Logo/Título -->
             <div class="flex items-center gap-3">
-                <div class="flex items-center gap-3">
                 <img src="src/assets/logo2.png" alt="SinAgua Logo" class="h-16 w-auto">
-            </div>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-slate-900">SinAgua</h1>
                     <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Monitoreo de Presas de Sinaloa</p>
                 </div>
             </div>
-
-            <!-- Meta info -->
             <div class="flex items-center gap-4 text-sm bg-slate-50 px-4 py-2 rounded-full border border-slate-200">
                 <span class="flex items-center gap-2 text-slate-600">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -38,9 +32,7 @@
         </div>
     </header>
 
-
     <main class="container mx-auto px-4 py-6">
-        <!-- Stats Section -->
         <section id="generalStats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div class="bg-blue-600 rounded-xl p-6 text-white shadow-lg">
                 <h2 class="text-sm opacity-80">Porcentaje Promedio (Total)</h2>
@@ -56,26 +48,32 @@
             </div>
         </section>
 
-        <!-- Menu/Tabs Section -->
-        <nav class="flex gap-2 mb-6 overflow-x-auto pb-2" id="viewMenu">
-            <button class="view-btn px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium" data-view="daily">Vista Diaria</button>
-            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="evolution">Evolución Temporal</button>
-            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="annual">Promedio Anual</button>
-            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="map">Vista Mapa</button>
-        </nav>
-
-
-        <!-- Content Section -->
-        <section id="viewContent" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <div id="filterContainer" class="mb-4"></div>
-            <div class="w-full">
-                <!-- Canvas para Gráficas o Contenedor para Mapa -->
-                <div id="chartWrapper">
-                    <canvas id="presasChart"></canvas>
-                </div>
-                <div id="map" class="h-[600px] w-full rounded-lg hidden"></div>
-            </div>
-        </section>
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 1. Vista Diaria -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4">Estado Diario</h2>
+                <div id="dailyFilter" class="mb-4"></div>
+                <canvas id="dailyChart"></canvas>
+            </section>
+            <!-- 2. Mapa -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4">Geolocalización</h2>
+                <div id="map" class="h-[400px] w-full rounded-lg"></div>
+            </section>
+            <!-- 3. Evolución Temporal -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4">Evolución Temporal</h2>
+                <div id="evolutionFilter" class="mb-4"></div>
+                <canvas id="evolutionChart"></canvas>
+            </section>
+            <!-- 4. Promedio Anual -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4">Promedio Anual Estatal</h2>
+                <div id="annualFilter" class="mb-4"></div>
+                <canvas id="annualChart"></canvas>
+            </section>
+        </div>
     </main>
 
     <footer class="mt-12 py-8 bg-slate-100 border-t border-slate-200">
