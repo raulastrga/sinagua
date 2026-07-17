@@ -6,28 +6,25 @@
     <title>Análisis de Presas en Sinaloa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
     <header class="bg-white border-b border-slate-200">
-        <div class="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <img src="src/assets/logo2.png" alt="SinAgua Logo" class="h-16 w-auto">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-slate-900">SinAgua</h1>
-                    <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Monitoreo de Presas de Sinaloa</p>
-                </div>
+                <img src="src/assets/logo2.png" alt="SinAgua Logo" class="h-12 w-auto">
+                <h1 class="text-xl font-bold text-slate-900">SinAgua</h1>
             </div>
-            <div class="flex items-center gap-4 text-sm bg-slate-50 px-4 py-2 rounded-full border border-slate-200">
-                <span class="flex items-center gap-2 text-slate-600">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    Sistema Activo
-                </span>
-                <span class="text-slate-300">|</span>
-                <span class="text-blue-700 font-medium">Actualizado: <span id="lastDate">--</span></span>
+            <nav class="flex gap-4 text-sm font-medium text-slate-600">
+                <a href="index.html" class="text-blue-700 underline">Dashboard</a>
+                <a href="nosotros.html" class="hover:text-blue-600">Quiénes Somos</a>
+                <a href="contacto.html" class="hover:text-blue-600">Contacto</a>
+                <a href="donacion.html" class="hover:text-blue-600">Apóyanos</a>
+            </nav>
+            <div class="hidden md:flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                Actualizado: <span id="lastDate">--</span>
             </div>
         </div>
     </header>
@@ -48,26 +45,21 @@
             </div>
         </section>
 
-        <!-- Dashboard Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- 1. Vista Diaria -->
             <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold mb-4">Estado Diario</h2>
                 <div id="dailyFilter" class="mb-4"></div>
                 <canvas id="dailyChart"></canvas>
             </section>
-            <!-- 2. Mapa -->
             <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold mb-4">Geolocalización</h2>
                 <div id="map" class="h-[400px] w-full rounded-lg"></div>
             </section>
-            <!-- 3. Evolución Temporal -->
             <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold mb-4">Evolución Temporal</h2>
                 <div id="evolutionFilter" class="mb-4"></div>
                 <canvas id="evolutionChart"></canvas>
             </section>
-            <!-- 4. Promedio Anual -->
             <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold mb-4">Promedio Anual Estatal</h2>
                 <div id="annualFilter" class="mb-4"></div>

@@ -20,7 +20,7 @@ const DAM_LOCATIONS = {
 };
 
 let masterData;
-let charts = {}; // To store chart instances
+let charts = {}; 
 let myMap;
 
 // Persistent state for filters
@@ -39,7 +39,10 @@ async function fetchData() {
     return await response.json();
 }
 
-async function init() {
+async function updateHeaderDate() {
+    const lastDateEl = document.getElementById('lastDate');
+    if (!lastDateEl) return;
+
     masterData = await fetchData();
     const dates = Object.keys(masterData).sort();
     const lastDateRaw = dates[dates.length - 1];
@@ -50,35 +53,39 @@ async function init() {
         return `${day}/${months[parseInt(month) - 1]}/${year}`;
     };
 
-    document.getElementById('lastDate').textContent = formatDate(lastDateRaw);
-    const lastData = masterData[lastDateRaw];
-    const prevDateRaw = dates[dates.length - 2];
-    const monthAgoDateRaw = dates[dates.length - 31];
+    lastDateEl.textContent = formatDate(lastDateRaw);
     
-    const getAvg = (data) => data.reduce((acc, p) => acc + parseFloat(p.porcentaje), 0) / data.length;
-    
-    const avg = getAvg(lastData);
-    document.getElementById('avgPercent').textContent = `${avg.toFixed(1)} %`;
+    // Stats and dashboard init if in index.html
+    const avgPercentEl = document.getElementById('avgPercent');
+    if (avgPercentEl) {
+        const lastData = masterData[lastDateRaw];
+        const prevDateRaw = dates[dates.length - 2];
+        const monthAgoDateRaw = dates[dates.length - 31];
+        
+        const getAvg = (data) => data.reduce((acc, p) => acc + parseFloat(p.porcentaje), 0) / data.length;
+        
+        const avg = getAvg(lastData);
+        avgPercentEl.textContent = `${avg.toFixed(1)} %`;
 
-    if (masterData[prevDateRaw]) {
-        const diffDay = avg - getAvg(masterData[prevDateRaw]);
-        const el = document.getElementById('avgDiffDay');
-        el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
-        el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        if (masterData[prevDateRaw]) {
+            const diffDay = avg - getAvg(masterData[prevDateRaw]);
+            const el = document.getElementById('avgDiffDay');
+            el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
+            el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        }
+
+        if (masterData[monthAgoDateRaw]) {
+            const diffMonth = avg - getAvg(masterData[monthAgoDateRaw]);
+            const el = document.getElementById('avgDiffMonth');
+            el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
+            el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        }
+
+        initDailyChart();
+        initMap();
+        initEvolutionChart();
+        initAnnualChart();
     }
-
-    if (masterData[monthAgoDateRaw]) {
-        const diffMonth = avg - getAvg(masterData[monthAgoDateRaw]);
-        const el = document.getElementById('avgDiffMonth');
-        el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
-        el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
-    }
-
-    // Initialize all charts
-    initDailyChart();
-    initMap();
-    initEvolutionChart();
-    initAnnualChart();
 }
 
 function initDailyChart() {
@@ -267,4 +274,4 @@ function createLabel(text) {
     return label;
 }
 
-init();
+updateHeaderDate();

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiénes Somos | SinAgua</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    <header class="bg-white border-b border-slate-200">
+        <div class="container mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+            <div class="flex items-center gap-3 justify-center md:justify-start">
+                <img src="src/assets/logo2.png" alt="SinAgua Logo" class="h-10 w-auto">
+                <h1 class="text-xl font-bold text-slate-900">SinAgua</h1>
+            </div>
+            
+            <nav class="flex gap-4 text-sm font-medium text-slate-600 justify-center">
+                <a href="index.html" class="hover:text-blue-600">Dashboard</a>
+                <a href="nosotros.html" class="text-blue-700 underline">Quiénes Somos</a>
+                <a href="contacto.html" class="hover:text-blue-600">Contacto</a>
+                <a href="donacion.html" class="hover:text-blue-600">Apóyanos</a>
+            </nav>
+
+            <div class="hidden md:flex justify-end">
+                <div id="headerStatus" class="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    Actualizado: <span id="lastDate">--</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <h1 class="text-3xl font-bold mb-6 text-blue-900">Quiénes Somos</h1>
+        <div class="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-slate-200 space-y-8">
+            <section>
+                <h2 class="text-2xl font-bold text-blue-900 mb-4">¿Qué es SinAgua?</h2>
+                <p class="text-slate-700 leading-relaxed"><strong>SinAgua</strong> es una plataforma de análisis estadístico diseñada para democratizar y facilitar el acceso a la información sobre el estado de almacenamiento de las presas en el estado de Sinaloa, México. El sistema transforma reportes técnicos estáticos en un <strong>dashboard interactivo</strong> que permite a productores agrícolas, investigadores y ciudadanos monitorear el recurso hídrico con precisión histórica y actual.</p>
+            </section>
+
+            <section>
+                <h2 class="text-2xl font-bold text-blue-900 mb-4">Origen de los Datos</h2>
+                <p class="text-slate-700 leading-relaxed">La fuente oficial de la información es la <strong><a href="https://cidh.org.mx/" target="_blank" class="text-blue-600 hover:underline">Comisión para la Investigación y Defensa de las Hortalizas de Sinaloa (CIDH)</a></strong>. La CIDH publica diariamente boletines en formato PDF detallando el estado técnico de las presas. SinAgua automatiza la ingesta y procesamiento de esta información.</p>
+            </section>
+
+            <section>
+                <h2 class="text-2xl font-bold text-blue-900 mb-4">Nuestra Propuesta de Valor</h2>
+                <p class="text-slate-700 leading-relaxed">Este proyecto representa una solución integral que combina ingeniería de datos, automatización de infraestructura y desarrollo front-end moderno, logrando que datos técnicos complejos se conviertan en información valiosa para la toma de decisiones.</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-8 bg-slate-100 border-t border-slate-200">
+        <div class="container mx-auto px-4 text-center text-slate-600 text-sm">
+            <p>&copy; 2026 SinAgua - Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="src/js/script.js"></script>
+</body>
+</html>
