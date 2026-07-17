@@ -41,20 +41,29 @@
 
     <main class="container mx-auto px-4 py-6">
         <!-- Stats Section -->
-        <section id="generalStats" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <section id="generalStats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div class="bg-blue-600 rounded-xl p-6 text-white shadow-lg">
                 <h2 class="text-sm opacity-80">Porcentaje Promedio (Total)</h2>
                 <p id="avgPercent" class="text-4xl font-bold">-- %</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <h2 class="text-sm text-slate-500">Variación vs Ayer</h2>
+                <p id="avgDiffDay" class="text-2xl font-semibold text-slate-800">--</p>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <h2 class="text-sm text-slate-500">Variación vs Mes Pasado</h2>
+                <p id="avgDiffMonth" class="text-2xl font-semibold text-slate-800">--</p>
             </div>
         </section>
 
         <!-- Menu/Tabs Section -->
         <nav class="flex gap-2 mb-6 overflow-x-auto pb-2" id="viewMenu">
             <button class="view-btn px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium" data-view="daily">Vista Diaria</button>
-            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="historical">Vista Histórica</button>
-            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="annual">Histórico Anual</button>
+            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="evolution">Evolución Temporal</button>
+            <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="annual">Promedio Anual</button>
             <button class="view-btn px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium" data-view="map">Vista Mapa</button>
         </nav>
+
 
         <!-- Content Section -->
         <section id="viewContent" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">

@@ -21,6 +21,8 @@ const DAM_LOCATIONS = {
 };
 
 let myChart, myMap, masterData;
+let currentDam = null;
+let currentPeriod = 90; // Default 3 meses
 
 async function fetchData() {
     const timestamp = new Date().getTime();
@@ -29,7 +31,7 @@ async function fetchData() {
     
     if (!response.ok) {
         // Fallback si la ruta absoluta falla
-        const response2 = await fetch(`../data/data.json?t=${timestamp}`);
+        const response2 = await fetch(`/src/data/data.json?t=${timestamp}`);
         return await response2.json();
     }
     return await response.json();
@@ -49,8 +51,31 @@ async function init() {
 
     document.getElementById('lastDate').textContent = formatDate(lastDateRaw);
     const lastData = masterData[lastDateRaw];
-    const avg = lastData.reduce((acc, p) => acc + parseFloat(p.porcentaje), 0) / lastData.length;
+    const prevDateRaw = dates[dates.length - 2];
+    const prevData = masterData[prevDateRaw];
+
+    const getAvg = (data) => data.reduce((acc, p) => acc + parseFloat(p.porcentaje), 0) / data.length;
+    
+    const avg = getAvg(lastData);
     document.getElementById('avgPercent').textContent = `${avg.toFixed(1)} %`;
+
+    // Variación vs Ayer
+    if (prevData) {
+        const diffDay = avg - getAvg(prevData);
+        const el = document.getElementById('avgDiffDay');
+        el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
+        el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
+
+    // Variación vs Mes Pasado (aprox 30 días)
+    const monthAgoDateRaw = dates[dates.length - 31];
+    const monthAgoData = masterData[monthAgoDateRaw];
+    if (monthAgoData) {
+        const diffMonth = avg - getAvg(monthAgoData);
+        const el = document.getElementById('avgDiffMonth');
+        el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
+        el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
 
     const viewButtons = document.querySelectorAll('.view-btn');
     viewButtons.forEach(btn => {
@@ -90,38 +115,116 @@ function renderView(view) {
             select.addEventListener('change', (e) => renderDailyChart(e.target.value));
             filterContainer.appendChild(select);
             renderDailyChart(select.value);
-        } else if (view === 'historical' || view === 'annual') {
-            const label = document.createElement('label');
-            label.textContent = "Presa: ";
-            label.className = "mr-2 font-medium text-slate-700";
-            
-            const select = document.createElement('select');
-            select.className = 'p-2 border border-slate-300 rounded-md w-full md:w-64';
-            const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
-            dams.forEach(d => select.options.add(new Option(d, d)));
-            
-            select.addEventListener('change', (e) => {
-                if (view === 'historical') renderHistoricalChart(e.target.value);
-                else renderAnnualChart(e.target.value);
-            });
-            
-            filterContainer.appendChild(label);
-            filterContainer.appendChild(select);
-            
-            if (view === 'historical') renderHistoricalChart(dams[0]);
-            else renderAnnualChart(dams[0]);
+        } else if (view === 'evolution') {
+            setupEvolutionFilters();
+        } else if (view === 'annual') {
+            setupAnnualFilters();
         }
     }
+}
+
+function setupEvolutionFilters() {
+    const filterContainer = document.getElementById('filterContainer');
+    const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
+    if (!currentDam) currentDam = dams[0];
+
+    const damSelect = createSelect(dams, currentDam, (e) => { currentDam = e.target.value; renderEvolutionChart(); });
+    const periodSelect = createSelect(
+        {7: '1 semana', 14: '2 semanas', 30: '1 mes', 90: '3 meses', 365: '1 año', Infinity: 'Histórico'},
+        currentPeriod,
+        (e) => { currentPeriod = e.target.value; renderEvolutionChart(); }
+    );
+    
+    filterContainer.append(createLabel("Presa: "), damSelect, createLabel(" Periodo: "), periodSelect);
+    renderEvolutionChart();
+}
+
+function renderEvolutionChart() {
+    const dates = Object.keys(masterData).sort();
+    const periodDays = currentPeriod === 'Infinity' ? Infinity : parseInt(currentPeriod);
+    const filteredDates = dates.slice(-periodDays);
+    
+    const chartData = filteredDates.map(date => {
+        const dam = masterData[date].find(d => d.nombre === currentDam);
+        return dam ? parseFloat(dam.porcentaje) : null;
+    });
+
+    updateChart({
+        type: 'line',
+        data: {
+            labels: filteredDates,
+            datasets: [{
+                label: `Evolución ${currentDam} (%)`,
+                data: chartData,
+                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+}
+
+function renderRecentChart(damName) {
+    const dates = Object.keys(masterData).sort();
+    const last90Dates = dates.slice(-90);
+    const recentData = last90Dates.map(date => {
+        const dam = masterData[date].find(d => d.nombre === damName);
+        return dam ? parseFloat(dam.porcentaje) : null;
+    });
+
+    updateChart({
+        type: 'line',
+        data: {
+            labels: last90Dates,
+            datasets: [{
+                label: `Últimos 3 meses ${damName} (%)`,
+                data: recentData,
+                borderColor: 'rgba(50, 205, 50, 1)',
+                backgroundColor: 'rgba(50, 205, 50, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+}
+
+function setupAnnualFilters() {
+    const filterContainer = document.getElementById('filterContainer');
+    const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
+    const options = ['Todas las presas', ...dams];
+    
+    const select = createSelect(options, options[0], (e) => {
+        const selected = e.target.value === 'Todas las presas' ? null : e.target.value;
+        renderAnnualChart(selected);
+    });
+    
+    filterContainer.append(createLabel("Presa: "), select);
+    renderAnnualChart(null);
 }
 
 function renderAnnualChart(damName) {
     const annualData = {};
     Object.keys(masterData).forEach(date => {
         const year = date.split('-')[0];
-        const damEntry = masterData[date].find(d => d.nombre === damName);
-        if (damEntry) {
+        const dayEntries = masterData[date];
+        
+        let values;
+        if (!damName) {
+            // Promedio de todas las presas
+            values = dayEntries.map(d => parseFloat(d.porcentaje)).filter(p => !isNaN(p));
+        } else {
+            // Filtrar por presa específica
+            const damEntry = dayEntries.find(d => d.nombre === damName);
+            values = damEntry ? [parseFloat(damEntry.porcentaje)].filter(p => !isNaN(p)) : [];
+        }
+        
+        if (values.length > 0) {
+            const avgDay = values.reduce((acc, v) => acc + v, 0) / values.length;
             if (!annualData[year]) annualData[year] = [];
-            annualData[year].push(parseFloat(damEntry.porcentaje));
+            annualData[year].push(avgDay);
         }
     });
 
@@ -136,7 +239,7 @@ function renderAnnualChart(damName) {
         data: {
             labels: labels,
             datasets: [{
-                label: `Promedio Anual ${damName} (%)`,
+                label: `Promedio Anual ${damName || 'Estatal'} (%)`,
                 data: averages,
                 backgroundColor: 'rgba(75, 192, 192, 0.7)'
             }]
@@ -176,6 +279,29 @@ function renderMap() {
                 .bindPopup(`<b>${dam.nombre}</b><br>Porcentaje: ${dam.porcentaje}%`);
         }
     });
+}
+
+// Helpers
+function createSelect(options, selectedValue, onChange) {
+    const select = document.createElement('select');
+    select.className = 'p-2 border border-slate-300 rounded-md w-full md:w-auto mr-4';
+    
+    if (Array.isArray(options)) {
+        options.forEach(o => select.options.add(new Option(o, o)));
+    } else {
+        Object.entries(options).forEach(([val, label]) => select.options.add(new Option(label, val)));
+    }
+    
+    select.value = selectedValue;
+    select.addEventListener('change', onChange);
+    return select;
+}
+
+function createLabel(text) {
+    const label = document.createElement('label');
+    label.textContent = text;
+    label.className = "mr-2 font-medium text-slate-700";
+    return label;
 }
 
 function updateChart(config) {
