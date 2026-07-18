@@ -55,27 +55,56 @@ async function updateHeaderDate() {
 
     lastDateEl.textContent = formatDate(lastDateRaw);
     
-    // Stats and dashboard init if in index.html
     const avgPercentEl = document.getElementById('avgPercent');
     if (avgPercentEl) {
-        const lastData = masterData[lastDateRaw];
+        // Función auxiliar para obtener datos de Sinaloa
+        // Excluimos Santa Maria y Picachos del promedio general
+        const getSinaloaDataForAvg = (data) => data.filter(d => 
+            DAM_LOCATIONS.hasOwnProperty(d.nombre) && 
+            d.nombre !== "Santa Maria" && 
+            d.nombre !== "Picachos"
+        );
+        
+        // Función para promedio ponderado real (Mm3) usando capacidad de conservación (NAMO)
+        const getAvg = (data, date) => {
+            const filtered = getSinaloaDataForAvg(data);
+            
+            let sumAlmacenamiento = 0;
+            let sumCapacidad = 0;
+            
+            filtered.forEach(p => {
+                const alm = parseFloat(p.almacenamientoActualMm3);
+                const cap = parseFloat(p.capacidadNamo); // Usando capacidadNamo
+                sumAlmacenamiento += alm;
+                sumCapacidad += cap;
+            });
+            
+            const avg = sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : 0;
+            return avg;
+        };
+        
+        // Calculamos los promedios
+        const avg = getAvg(masterData[lastDateRaw], lastDateRaw);
+        
         const prevDateRaw = dates[dates.length - 2];
+        const prevAvg = masterData[prevDateRaw] ? getAvg(masterData[prevDateRaw], prevDateRaw) : null;
+        
         const monthAgoDateRaw = dates[dates.length - 31];
-        
-        const getAvg = (data) => data.reduce((acc, p) => acc + parseFloat(p.porcentaje), 0) / data.length;
-        
-        const avg = getAvg(lastData);
+        const monthAvg = masterData[monthAgoDateRaw] ? getAvg(masterData[monthAgoDateRaw], monthAgoDateRaw) : null;
+
+
+        // Actualizamos UI
         avgPercentEl.textContent = `${avg.toFixed(1)} %`;
 
-        if (masterData[prevDateRaw]) {
-            const diffDay = avg - getAvg(masterData[prevDateRaw]);
+        if (prevAvg !== null) {
+            const diffDay = avg - prevAvg;
             const el = document.getElementById('avgDiffDay');
             el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
             el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
         }
 
-        if (masterData[monthAgoDateRaw]) {
-            const diffMonth = avg - getAvg(masterData[monthAgoDateRaw]);
+        if (monthAvg !== null) {
+            const diffMonth = avg - monthAvg;
             const el = document.getElementById('avgDiffMonth');
             el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
             el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
