@@ -1,4 +1,4 @@
-// Convert DMS (Degrees, Minutes, Seconds) to Decimal Degrees
+// Función auxiliar para convertir DMS a decimal
 function dmsToDecimal(d, m, s) {
     return d + (m / 60) + (s / 3600);
 }
@@ -23,7 +23,7 @@ let masterData;
 let charts = {}; 
 let myMap;
 
-// Persistent state for filters
+// Variables de estado
 let currentDamEvolution = 'Todas las presas';
 let currentPeriodEvolution = 90;
 let currentDamAnnual = null;
@@ -57,57 +57,40 @@ async function updateHeaderDate() {
     
     const avgPercentEl = document.getElementById('avgPercent');
     if (avgPercentEl) {
-        // Función auxiliar para obtener datos de Sinaloa
-        // Excluimos Santa Maria y Picachos del promedio general
         const getSinaloaDataForAvg = (data) => data.filter(d => 
             DAM_LOCATIONS.hasOwnProperty(d.nombre) && 
             d.nombre !== "Santa Maria" && 
             d.nombre !== "Picachos"
         );
         
-        // Función para promedio ponderado real (Mm3) usando capacidad de conservación (NAMO)
-        const getAvg = (data, date) => {
+        const getAvg = (data) => {
             const filtered = getSinaloaDataForAvg(data);
-            
-            let sumAlmacenamiento = 0;
-            let sumCapacidad = 0;
-            
-            filtered.forEach(p => {
-                const alm = parseFloat(p.almacenamientoActualMm3);
-                const cap = parseFloat(p.capacidadNamo); // Usando capacidadNamo
-                sumAlmacenamiento += alm;
-                sumCapacidad += cap;
-            });
-            
-            const avg = sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : 0;
-            return avg;
+            const sumAlmacenamiento = filtered.reduce((acc, p) => acc + parseFloat(p.almacenamientoActualMm3), 0);
+            const sumCapacidad = filtered.reduce((acc, p) => acc + parseFloat(p.capacidadNamo), 0);
+            return sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : 0;
         };
         
-        // Calculamos los promedios
-        const avg = getAvg(masterData[lastDateRaw], lastDateRaw);
-        
-        const prevDateRaw = dates[dates.length - 2];
-        const prevAvg = masterData[prevDateRaw] ? getAvg(masterData[prevDateRaw], prevDateRaw) : null;
-        
-        const monthAgoDateRaw = dates[dates.length - 31];
-        const monthAvg = masterData[monthAgoDateRaw] ? getAvg(masterData[monthAgoDateRaw], monthAgoDateRaw) : null;
-
-
-        // Actualizamos UI
+        const avg = getAvg(masterData[lastDateRaw]);
         avgPercentEl.textContent = `${avg.toFixed(1)} %`;
 
-        if (prevAvg !== null) {
-            const diffDay = avg - prevAvg;
+        const prevDateRaw = dates[dates.length - 2];
+        const monthAgoDateRaw = dates[dates.length - 31];
+        
+        if (masterData[prevDateRaw]) {
+            const diffDay = avg - getAvg(masterData[prevDateRaw]);
             const el = document.getElementById('avgDiffDay');
-            el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
-            el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
+            if(el) {
+                el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
+                el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
+            }
         }
-
-        if (monthAvg !== null) {
-            const diffMonth = avg - monthAvg;
+        if (masterData[monthAgoDateRaw]) {
+            const diffMonth = avg - getAvg(masterData[monthAgoDateRaw]);
             const el = document.getElementById('avgDiffMonth');
-            el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
-            el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+            if(el) {
+                el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
+                el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+            }
         }
 
         initDailyChart();
@@ -119,8 +102,8 @@ async function updateHeaderDate() {
 
 function initDailyChart() {
     const filterContainer = document.getElementById('dailyFilter');
+    if (!filterContainer) return;
     const dates = Object.keys(masterData).sort().reverse();
-    
     const select = createSelect(dates, dates[0], (e) => renderDailyChart(e.target.value));
     filterContainer.appendChild(select);
     renderDailyChart(dates[0]);
@@ -144,6 +127,7 @@ function renderDailyChart(date) {
 
 function initEvolutionChart() {
     const filterContainer = document.getElementById('evolutionFilter');
+    if (!filterContainer) return;
     const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
     const options = ['Todas las presas', ...dams];
 
@@ -167,11 +151,21 @@ function renderEvolutionChart() {
     const periodDays = currentPeriodEvolution === 'Infinity' ? Infinity : parseInt(currentPeriodEvolution);
     const filteredDates = dates.slice(-periodDays);
     
+    // Función auxiliar para filtrar y calcular el ponderado igual que en el header
+    const getSinaloaDataForAvg = (data) => data.filter(d => 
+        DAM_LOCATIONS.hasOwnProperty(d.nombre) && 
+        d.nombre !== "Santa Maria" && 
+        d.nombre !== "Picachos"
+    );
+    
     const chartData = filteredDates.map(date => {
         const dayEntries = masterData[date];
+        
         if (currentDamEvolution === 'Todas las presas') {
-            const values = dayEntries.map(d => parseFloat(d.porcentaje)).filter(p => !isNaN(p));
-            return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+            const filtered = getSinaloaDataForAvg(dayEntries);
+            const sumAlmacenamiento = filtered.reduce((acc, p) => acc + parseFloat(p.almacenamientoActualMm3), 0);
+            const sumCapacidad = filtered.reduce((acc, p) => acc + parseFloat(p.capacidadNamo), 0);
+            return sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : null;
         } else {
             const dam = dayEntries.find(d => d.nombre === currentDamEvolution);
             return dam ? parseFloat(dam.porcentaje) : null;
@@ -183,7 +177,7 @@ function renderEvolutionChart() {
         data: {
             labels: filteredDates,
             datasets: [{
-                label: `Evolución ${currentDamEvolution} (%)`,
+                label: `Evolución ${currentDamEvolution === 'Todas las presas' ? 'Estatal (Ponderado)' : currentDamEvolution} (%)`,
                 data: chartData,
                 borderColor: 'rgba(59, 130, 246, 1)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -197,6 +191,7 @@ function renderEvolutionChart() {
 
 function initAnnualChart() {
     const filterContainer = document.getElementById('annualFilter');
+    if (!filterContainer) return;
     const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
     const options = ['Todas las presas', ...dams];
     
@@ -251,6 +246,9 @@ function renderAnnualChart() {
 }
 
 function initMap() {
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return;
+    
     myMap = L.map('map').setView([25.0, -107.5], 7);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap contributors & CARTO',
@@ -303,4 +301,4 @@ function createLabel(text) {
     return label;
 }
 
-updateHeaderDate();
+document.addEventListener('DOMContentLoaded', updateHeaderDate);
