@@ -13,11 +13,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' }
+                        primary: { 50: '#EBF2FF', 100: '#D6E5FF', 200: '#ADCCFF', 300: '#85B2FF', 400: '#5C99FF', 500: '#0057FF', 600: '#004DE6', 700: '#003DB3', 800: '#002D80', 900: '#001E4D' },
+                        cream: { 50: '#FDFDFC', 100: '#F8F7F4', 200: '#F0EDE8', 300: '#E4E0D9', 400: '#CCC7BC' },
+                        success: { 500: '#10B981', 600: '#059669' },
+                        warning: { 500: '#F59E0B', 600: '#D97706' },
+                        danger: { 500: '#EF4444', 600: '#DC2626' }
                     }
                 }
             }
@@ -25,81 +30,90 @@
     </script>
     <link rel="stylesheet" href="src/css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen font-sans flex flex-col">
+<body class="bg-cream-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen font-sans flex flex-col transition-colors duration-300">
 
     <!-- HEADER -->
-    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-lg">
+    <header class="bg-primary-700 dark:bg-slate-900 text-white sticky top-0 z-50 shadow-lg">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <a href="index.html" class="flex items-center gap-3">
                 <img src="src/assets/logo2.png" alt="SinAgua" class="h-10">
                 <span class="text-lg font-bold tracking-tight">SinAgua</span>
             </a>
             <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-                <a href="index.html" class="text-cyan-400 border-b-2 border-cyan-400 pb-1">Dashboard</a>
-                <a href="nosotros.html" class="text-slate-300 hover:text-cyan-400 transition">Quiénes Somos</a>
-                <a href="contacto.html" class="text-slate-300 hover:text-cyan-400 transition">Contacto</a>
-                <a href="donacion.html" class="text-slate-300 hover:text-cyan-400 transition">Apóyanos</a>
+                <a href="index.html" class="text-white border-b-2 border-white pb-1">Dashboard</a>
+                <a href="nosotros.html" class="text-primary-100 hover:text-white transition">Quiénes Somos</a>
+                <a href="contacto.html" class="text-primary-100 hover:text-white transition">Contacto</a>
+                <a href="donacion.html" class="text-primary-100 hover:text-white transition">Apóyanos</a>
             </nav>
-            <div class="hidden md:flex items-center gap-2 text-xs bg-slate-800 px-3 py-1.5 rounded-full">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-slate-400">Actualizado: <span id="lastDate" class="text-white font-medium">--</span></span>
+            <div class="hidden md:flex items-center gap-2 text-xs bg-primary-800/50 px-3 py-1.5 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></span>
+                <span class="text-primary-200">Actualizado: <span id="lastDate" class="text-white font-medium">--</span></span>
             </div>
-            <button class="md:hidden text-white p-2 hover:bg-slate-800 rounded-lg transition" onclick="toggleMenu()">
+            <!-- Dark mode toggle -->
+            <button onclick="toggleDarkMode()" class="hidden md:flex p-2 hover:bg-primary-800 rounded-lg transition" title="Cambiar tema">
+                <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+            <button class="md:hidden text-white p-2 hover:bg-primary-800 rounded-lg transition" onclick="toggleMenu()">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
         </div>
-        <div id="mobileMenu" class="hidden md:hidden bg-slate-800 px-4 py-4 space-y-3 border-t border-slate-700">
-            <a href="index.html" class="block text-cyan-400 font-medium">Dashboard</a>
-            <a href="nosotros.html" class="block text-slate-300 hover:text-cyan-400 transition">Quiénes Somos</a>
-            <a href="contacto.html" class="block text-slate-300 hover:text-cyan-400 transition">Contacto</a>
-            <a href="donacion.html" class="block text-slate-300 hover:text-cyan-400 transition">Apóyanos</a>
-            <div class="flex items-center gap-2 text-xs pt-3 border-t border-slate-700">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-slate-400">Actualizado: <span id="lastDateMobile" class="text-white font-medium">--</span></span>
+        <div id="mobileMenu" class="hidden md:hidden bg-primary-800 px-4 py-4 space-y-3 border-t border-primary-600">
+            <a href="index.html" class="block text-white font-medium">Dashboard</a>
+            <a href="nosotros.html" class="block text-primary-200 hover:text-white transition">Quiénes Somos</a>
+            <a href="contacto.html" class="block text-primary-200 hover:text-white transition">Contacto</a>
+            <a href="donacion.html" class="block text-primary-200 hover:text-white transition">Apóyanos</a>
+            <div class="flex items-center gap-2 text-xs pt-3 border-t border-primary-600">
+                <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></span>
+                <span class="text-primary-200">Actualizado: <span id="lastDateMobile" class="text-white font-medium">--</span></span>
             </div>
+            <button onclick="toggleDarkMode()" class="flex items-center gap-2 text-xs text-primary-200 hover:text-white transition pt-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                Cambiar tema
+            </button>
         </div>
     </header>
 
     <main class="container mx-auto px-4 py-8 flex-grow">
         <!-- STATS -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl p-6 text-white shadow-xl">
+            <div class="bg-primary-500 dark:bg-primary-700 rounded-2xl p-6 text-white shadow-xl">
                 <div class="flex items-center gap-2 mb-2">
-                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                    <h2 class="text-sm font-medium text-slate-300">Promedio Estatal</h2>
+                    <svg class="w-5 h-5 text-primary-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    <h2 class="text-sm font-medium text-primary-200">Promedio Estatal</h2>
                 </div>
                 <p id="avgPercent" class="text-5xl font-extrabold tracking-tight">-- %</p>
-                <p class="text-xs text-slate-400 mt-2">Almacenamiento / Capacidad NAMO</p>
+                <p class="text-xs text-primary-200/70 mt-2">Almacenamiento / Capacidad NAMO</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-cream-200 dark:border-slate-700 flex flex-col justify-center">
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span class="text-xs text-slate-500 font-medium">vs Ayer</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">vs Ayer</span>
                 </div>
-                <p id="avgDiffDay" class="text-3xl font-bold text-slate-800">--</p>
+                <p id="avgDiffDay" class="text-3xl font-bold text-slate-800 dark:text-slate-100">--</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-cream-200 dark:border-slate-700 flex flex-col justify-center">
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span class="text-xs text-slate-500 font-medium">vs Mes Pasado</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">vs Mes Pasado</span>
                 </div>
-                <p id="avgDiffMonth" class="text-3xl font-bold text-slate-800">--</p>
+                <p id="avgDiffMonth" class="text-3xl font-bold text-slate-800 dark:text-slate-100">--</p>
             </div>
         </section>
 
         <!-- DASHBOARD GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Diario -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-cream-200 dark:border-slate-700 overflow-hidden">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <div class="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                             </div>
-                            <h2 class="text-lg font-bold text-slate-800">Estado Diario</h2>
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Estado Diario</h2>
                         </div>
-                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-cream-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                         </button>
                     </div>
@@ -108,16 +122,16 @@
                 </div>
             </section>
             <!-- Mapa -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative z-10">
+            <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-cream-200 dark:border-slate-700 overflow-hidden relative z-10">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <div class="w-8 h-8 rounded-lg bg-success-500/10 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             </div>
-                            <h2 class="text-lg font-bold text-slate-800">Geolocalización</h2>
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Geolocalización</h2>
                         </div>
-                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-cream-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                         </button>
                     </div>
@@ -125,16 +139,16 @@
                 </div>
             </section>
             <!-- Evolución -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-cream-200 dark:border-slate-700 overflow-hidden">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            <div class="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
                             </div>
-                            <h2 class="text-lg font-bold text-slate-800">Evolución Temporal</h2>
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Evolución Temporal</h2>
                         </div>
-                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-cream-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                         </button>
                     </div>
@@ -143,16 +157,16 @@
                 </div>
             </section>
             <!-- Anual -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-cream-200 dark:border-slate-700 overflow-hidden">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <div class="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             </div>
-                            <h2 class="text-lg font-bold text-slate-800">Promedio Anual</h2>
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Promedio Anual</h2>
                         </div>
-                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-cream-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                         </button>
                     </div>
@@ -164,7 +178,7 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-900 text-white mt-16">
+    <footer class="bg-primary-700 dark:bg-slate-900 text-white mt-16">
         <div class="container mx-auto px-4 py-12">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
@@ -172,23 +186,23 @@
                         <img src="src/assets/logo2.png" class="h-8" alt="SinAgua">
                         <span class="font-bold text-lg">SinAgua</span>
                     </div>
-                    <p class="text-slate-400 text-sm leading-relaxed">Monitoreo inteligente del estado de las presas de Sinaloa. Datos automatizados y actualizados diariamente.</p>
+                    <p class="text-primary-200/80 text-sm leading-relaxed">Monitoreo inteligente del estado de las presas de Sinaloa. Datos automatizados y actualizados diariamente.</p>
                 </div>
                 <div>
-                    <h3 class="font-semibold mb-4 text-slate-300">Navegación</h3>
-                    <ul class="space-y-2 text-sm text-slate-400">
-                        <li><a href="index.html" class="hover:text-cyan-400 transition">Dashboard</a></li>
-                        <li><a href="nosotros.html" class="hover:text-cyan-400 transition">Quiénes Somos</a></li>
-                        <li><a href="contacto.html" class="hover:text-cyan-400 transition">Contacto</a></li>
-                        <li><a href="donacion.html" class="hover:text-cyan-400 transition">Apóyanos</a></li>
+                    <h3 class="font-semibold mb-4 text-primary-100">Navegación</h3>
+                    <ul class="space-y-2 text-sm text-primary-200/70">
+                        <li><a href="index.html" class="hover:text-white transition">Dashboard</a></li>
+                        <li><a href="nosotros.html" class="hover:text-white transition">Quiénes Somos</a></li>
+                        <li><a href="contacto.html" class="hover:text-white transition">Contacto</a></li>
+                        <li><a href="donacion.html" class="hover:text-white transition">Apóyanos</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="font-semibold mb-4 text-slate-300">Fuente de Datos</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Información oficial de la <a href="https://cidh.org.mx/" target="_blank" class="text-cyan-400 hover:underline">CIDH Sinaloa</a>.</p>
+                    <h3 class="font-semibold mb-4 text-primary-100">Fuente de Datos</h3>
+                    <p class="text-sm text-primary-200/70 leading-relaxed">Información oficial de la <a href="https://cidh.org.mx/" target="_blank" class="text-white hover:underline">CIDH Sinaloa</a>.</p>
                 </div>
             </div>
-            <div class="border-t border-slate-800 mt-8 pt-6 text-center text-xs text-slate-500">&copy; 2026 SinAgua - Todos los derechos reservados.</div>
+            <div class="border-t border-primary-600 mt-8 pt-6 text-center text-xs text-primary-200/50">&copy; 2026 SinAgua - Todos los derechos reservados.</div>
         </div>
     </footer>
 
@@ -204,6 +218,15 @@
         }
         function toggleMenu() {
             document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        // Init dark mode from localStorage
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
         }
     </script>
 </body>

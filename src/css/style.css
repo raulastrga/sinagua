@@ -1,12 +1,16 @@
 /* ========================================
    SinAgua - Estilos Personalizados
+   Paleta: #0057FF + #F8F7F4
    ======================================== */
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track { background: #F8F7F4; }
+::-webkit-scrollbar-thumb { background: #ccc7bc; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #0057FF; }
+.dark ::-webkit-scrollbar-track { background: #1e293b; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #0057FF; }
 
 /* Selects estilizados */
 select {
@@ -18,37 +22,43 @@ select {
     padding-right: 2.5rem;
 }
 
-/* Transiciones suaves */
-* { transition-property: background-color, border-color, color, fill, stroke; }
-
-/* Chart.js tooltips */
-.chartjs-tooltip { font-family: 'Inter', sans-serif; }
-
 /* Leaflet popup */
 .leaflet-popup-content-wrapper {
     border-radius: 12px !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
     font-family: 'Inter', sans-serif !important;
 }
 .leaflet-popup-content { margin: 12px 16px !important; }
 
-/* Map markers con sombra */
+/* Map markers */
 .leaflet-marker-icon {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 /* Animación de carga */
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-section, .bg-white {
-    animation: fadeInUp 0.4s ease-out;
+main > section,
+main > div > section {
+    animation: fadeInUp 0.4s ease-out both;
 }
+
+main > div > section:nth-child(2) { animation-delay: 0.1s; }
+main > div > section:nth-child(3) { animation-delay: 0.15s; }
+main > div > section:nth-child(4) { animation-delay: 0.2s; }
 
 /* Focus rings accesibles */
 button:focus-visible, a:focus-visible, select:focus-visible {
-    outline: 2px solid #0ea5e9;
+    outline: 2px solid #0057FF;
     outline-offset: 2px;
+}
+
+/* Transiciones de tema */
+* {
+    transition-property: background-color, border-color;
+    transition-timing-function: ease;
+    transition-duration: 200ms;
 }

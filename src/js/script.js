@@ -21,12 +21,12 @@ const DAM_LOCATIONS = {
 
 // Paleta de colores del proyecto
 const COLORS = {
-    cyan: 'rgba(6, 182, 212, 0.8)',
-    cyanLight: 'rgba(6, 182, 212, 0.1)',
-    blue: 'rgba(59, 130, 246, 0.8)',
-    blueLight: 'rgba(59, 130, 246, 0.1)',
-    indigo: 'rgba(99, 102, 241, 0.8)',
-    indigoLight: 'rgba(99, 102, 241, 0.1)'
+    primary: 'rgba(0, 87, 255, 0.8)',
+    primaryLight: 'rgba(0, 87, 255, 0.1)',
+    secondary: 'rgba(0, 87, 255, 0.5)',
+    success: 'rgba(16, 185, 129, 0.8)',
+    danger: 'rgba(239, 68, 68, 0.8)',
+    accent: 'rgba(92, 153, 255, 0.8)'
 };
 
 let masterData;
@@ -95,7 +95,7 @@ async function updateHeaderDate() {
             const el = document.getElementById('avgDiffDay');
             if(el) {
                 const prefix = diffDay >= 0 ? '+' : '';
-                const colorClass = diffDay >= 0 ? 'text-emerald-600' : 'text-red-500';
+                const colorClass = diffDay >= 0 ? 'text-success-500' : 'text-danger-500';
                 const arrow = diffDay >= 0 ? '↑' : '↓';
                 el.textContent = `${prefix}${diffDay.toFixed(2)}% ${arrow}`;
                 el.className = `text-3xl font-bold ${colorClass}`;
@@ -106,7 +106,7 @@ async function updateHeaderDate() {
             const el = document.getElementById('avgDiffMonth');
             if(el) {
                 const prefix = diffMonth >= 0 ? '+' : '';
-                const colorClass = diffMonth >= 0 ? 'text-emerald-600' : 'text-red-500';
+                const colorClass = diffMonth >= 0 ? 'text-success-500' : 'text-danger-500';
                 const arrow = diffMonth >= 0 ? '↑' : '↓';
                 el.textContent = `${prefix}${diffMonth.toFixed(2)}% ${arrow}`;
                 el.className = `text-3xl font-bold ${colorClass}`;
@@ -138,7 +138,7 @@ function renderDailyChart(date) {
             datasets: [{
                 label: 'Porcentaje (%)',
                 data: dayData.map(p => parseFloat(p.porcentaje)),
-                backgroundColor: COLORS.cyan,
+                backgroundColor: COLORS.primary,
                 borderRadius: 6,
                 borderSkipped: false
             }]
@@ -207,8 +207,8 @@ function renderEvolutionChart() {
             datasets: [{
                 label: `Evolución ${currentDamEvolution === 'Todas las presas' ? 'Estatal (Ponderado)' : currentDamEvolution} (%)`,
                 data: chartData,
-                borderColor: COLORS.blue,
-                backgroundColor: COLORS.blueLight,
+                borderColor: COLORS.primary,
+                backgroundColor: COLORS.primaryLight,
                 tension: 0.3,
                 fill: true,
                 pointRadius: filteredDates.length > 60 ? 0 : 3,
@@ -276,7 +276,7 @@ function renderAnnualChart() {
             datasets: [{
                 label: `Promedio Anual ${currentDamAnnual || 'Estatal'} (%)`,
                 data: averages,
-                backgroundColor: COLORS.indigo,
+                backgroundColor: COLORS.accent,
                 borderRadius: 6,
                 borderSkipped: false
             }]
@@ -310,7 +310,7 @@ function initMap() {
         const loc = DAM_LOCATIONS[dam.nombre];
         if (loc) {
             const icon = L.divIcon({
-                className: 'bg-white border-2 border-cyan-500 rounded-full px-2.5 py-1 text-xs font-bold text-cyan-800 shadow-lg flex items-center justify-center whitespace-nowrap',
+                className: 'bg-white dark:bg-slate-800 border-2 border-primary-500 rounded-full px-2.5 py-1 text-xs font-bold text-primary-500 shadow-lg flex items-center justify-center whitespace-nowrap',
                 html: `${dam.porcentaje}%`,
                 iconSize: [56, 28],
                 iconAnchor: [28, 14]
@@ -330,7 +330,7 @@ function updateChart(canvasId, config) {
 
 function createSelect(options, selectedValue, onChange) {
     const select = document.createElement('select');
-    select.className = 'text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition w-full md:w-auto mr-3';
+    select.className = 'text-sm border border-cream-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition w-full md:w-auto mr-3';
     if (Array.isArray(options)) {
         options.forEach(o => select.options.add(new Option(o, o)));
     } else {
@@ -344,7 +344,7 @@ function createSelect(options, selectedValue, onChange) {
 function createLabel(text) {
     const label = document.createElement('label');
     label.textContent = text;
-    label.className = "text-xs font-medium text-slate-500 mr-1";
+    label.className = "text-xs font-medium text-slate-500 dark:text-slate-400 mr-1";
     return label;
 }
 
