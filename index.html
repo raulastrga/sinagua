@@ -3,102 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Presas en Sinaloa</title>
+    <title>SinAgua - Monitoreo de Presas de Sinaloa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="src/css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-    <header class="bg-white border-b border-slate-200">
-        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <img src="src/assets/logo2.png" alt="SinAgua Logo" class="h-12 w-auto">
-                <h1 class="text-xl font-bold text-slate-900">SinAgua</h1>
-            </div>
-            <nav class="flex gap-4 text-sm font-medium text-slate-600">
-                <a href="index.html" class="text-blue-700 underline">Dashboard</a>
-                <a href="nosotros.html" class="hover:text-blue-600">Quiénes Somos</a>
-                <a href="contacto.html" class="hover:text-blue-600">Contacto</a>
-                <a href="donacion.html" class="hover:text-blue-600">Apóyanos</a>
+<body class="bg-slate-50 text-slate-900 min-h-screen font-sans flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-3">
+                <img src="src/assets/logo2.png" alt="SinAgua" class="h-10">
+                <span class="text-lg font-bold tracking-tight">SinAgua</span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+                <a href="index.html" class="text-cyan-400 border-b-2 border-cyan-400 pb-1">Dashboard</a>
+                <a href="nosotros.html" class="text-slate-300 hover:text-cyan-400 transition">Quiénes Somos</a>
+                <a href="contacto.html" class="text-slate-300 hover:text-cyan-400 transition">Contacto</a>
+                <a href="donacion.html" class="text-slate-300 hover:text-cyan-400 transition">Apóyanos</a>
             </nav>
-            <div class="hidden md:flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                Actualizado: <span id="lastDate">--</span>
+            <div class="hidden md:flex items-center gap-2 text-xs bg-slate-800 px-3 py-1.5 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-slate-400">Actualizado: <span id="lastDate" class="text-white font-medium">--</span></span>
+            </div>
+            <button class="md:hidden text-white p-2 hover:bg-slate-800 rounded-lg transition" onclick="toggleMenu()">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden bg-slate-800 px-4 py-4 space-y-3 border-t border-slate-700">
+            <a href="index.html" class="block text-cyan-400 font-medium">Dashboard</a>
+            <a href="nosotros.html" class="block text-slate-300 hover:text-cyan-400 transition">Quiénes Somos</a>
+            <a href="contacto.html" class="block text-slate-300 hover:text-cyan-400 transition">Contacto</a>
+            <a href="donacion.html" class="block text-slate-300 hover:text-cyan-400 transition">Apóyanos</a>
+            <div class="flex items-center gap-2 text-xs pt-3 border-t border-slate-700">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-slate-400">Actualizado: <span id="lastDateMobile" class="text-white font-medium">--</span></span>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-6">
-        <section id="generalStats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-blue-600 rounded-xl p-6 text-white shadow-lg">
-                <h2 class="text-sm opacity-80">Porcentaje Promedio (Total)</h2>
-                <p id="avgPercent" class="text-4xl font-bold">-- %</p>
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <!-- STATS -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl p-6 text-white shadow-xl">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    <h2 class="text-sm font-medium text-slate-300">Promedio Estatal</h2>
+                </div>
+                <p id="avgPercent" class="text-5xl font-extrabold tracking-tight">-- %</p>
+                <p class="text-xs text-slate-400 mt-2">Almacenamiento / Capacidad NAMO</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                <h2 class="text-sm text-slate-500">Variación vs Ayer</h2>
-                <p id="avgDiffDay" class="text-2xl font-semibold text-slate-800">--</p>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-xs text-slate-500 font-medium">vs Ayer</span>
+                </div>
+                <p id="avgDiffDay" class="text-3xl font-bold text-slate-800">--</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                <h2 class="text-sm text-slate-500">Variación vs Mes Pasado</h2>
-                <p id="avgDiffMonth" class="text-2xl font-semibold text-slate-800">--</p>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span class="text-xs text-slate-500 font-medium">vs Mes Pasado</span>
+                </div>
+                <p id="avgDiffMonth" class="text-3xl font-bold text-slate-800">--</p>
             </div>
         </section>
 
-        <!-- Dashboard Grid -->
+        <!-- DASHBOARD GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- 1. Vista Diaria -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Estado Diario</h2>
-                    <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                    </button>
+            <!-- Diario -->
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            </div>
+                            <h2 class="text-lg font-bold text-slate-800">Estado Diario</h2>
+                        </div>
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                    <div id="dailyFilter" class="mb-4"></div>
+                    <canvas id="dailyChart"></canvas>
                 </div>
-                <div id="dailyFilter" class="mb-4"></div>
-                <canvas id="dailyChart"></canvas>
             </section>
-            <!-- 2. Mapa -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Geolocalización</h2>
-                    <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                    </button>
+            <!-- Mapa -->
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative z-10">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            </div>
+                            <h2 class="text-lg font-bold text-slate-800">Geolocalización</h2>
+                        </div>
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                    <div id="map" class="h-[400px] w-full rounded-xl"></div>
                 </div>
-                <div id="map" class="h-[400px] w-full rounded-lg"></div>
             </section>
-            <!-- 3. Evolución Temporal -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Evolución Temporal</h2>
-                    <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                    </button>
+            <!-- Evolución -->
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            </div>
+                            <h2 class="text-lg font-bold text-slate-800">Evolución Temporal</h2>
+                        </div>
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                    <div id="evolutionFilter" class="mb-4"></div>
+                    <canvas id="evolutionChart"></canvas>
                 </div>
-                <div id="evolutionFilter" class="mb-4"></div>
-                <canvas id="evolutionChart"></canvas>
             </section>
-            <!-- 4. Promedio Anual -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Promedio Anual Estatal</h2>
-                    <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                    </button>
+            <!-- Anual -->
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h2 class="text-lg font-bold text-slate-800">Promedio Anual</h2>
+                        </div>
+                        <button onclick="toggleFullscreen(this)" class="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                        </button>
+                    </div>
+                    <div id="annualFilter" class="mb-4"></div>
+                    <canvas id="annualChart"></canvas>
                 </div>
-                <div id="annualFilter" class="mb-4"></div>
-                <canvas id="annualChart"></canvas>
             </section>
         </div>
     </main>
 
-    <footer class="mt-12 py-8 bg-slate-100 border-t border-slate-200">
-        <div class="container mx-auto px-4 text-center text-slate-600 text-sm">
-            <p class="mb-2">Datos obtenidos de: <a href="https://cidh.org.mx/" target="_blank" class="text-blue-700 font-semibold hover:underline">CIDH</a></p>
-            <p>&copy; 2026 SinAgua - Todos los derechos reservados.</p>
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-white mt-16">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <img src="src/assets/logo2.png" class="h-8" alt="SinAgua">
+                        <span class="font-bold text-lg">SinAgua</span>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">Monitoreo inteligente del estado de las presas de Sinaloa. Datos automatizados y actualizados diariamente.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-4 text-slate-300">Navegación</h3>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="index.html" class="hover:text-cyan-400 transition">Dashboard</a></li>
+                        <li><a href="nosotros.html" class="hover:text-cyan-400 transition">Quiénes Somos</a></li>
+                        <li><a href="contacto.html" class="hover:text-cyan-400 transition">Contacto</a></li>
+                        <li><a href="donacion.html" class="hover:text-cyan-400 transition">Apóyanos</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-4 text-slate-300">Fuente de Datos</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">Información oficial de la <a href="https://cidh.org.mx/" target="_blank" class="text-cyan-400 hover:underline">CIDH Sinaloa</a>.</p>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 mt-8 pt-6 text-center text-xs text-slate-500">&copy; 2026 SinAgua - Todos los derechos reservados.</div>
         </div>
     </footer>
 
@@ -107,12 +197,13 @@
         function toggleFullscreen(button) {
             const section = button.closest('section');
             if (!document.fullscreenElement) {
-                section.requestFullscreen().catch(err => {
-                    console.error(`Error al intentar poner en pantalla completa: ${err.message}`);
-                });
+                section.requestFullscreen().catch(err => console.error(err));
             } else {
                 document.exitFullscreen();
             }
+        }
+        function toggleMenu() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
         }
     </script>
 </body>

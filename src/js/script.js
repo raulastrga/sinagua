@@ -19,6 +19,16 @@ const DAM_LOCATIONS = {
     "Picachos": { lat: dmsToDecimal(23, 28, 41), lon: -dmsToDecimal(106, 13, 25) }
 };
 
+// Paleta de colores del proyecto
+const COLORS = {
+    cyan: 'rgba(6, 182, 212, 0.8)',
+    cyanLight: 'rgba(6, 182, 212, 0.1)',
+    blue: 'rgba(59, 130, 246, 0.8)',
+    blueLight: 'rgba(59, 130, 246, 0.1)',
+    indigo: 'rgba(99, 102, 241, 0.8)',
+    indigoLight: 'rgba(99, 102, 241, 0.1)'
+};
+
 let masterData;
 let charts = {}; 
 let myMap;
@@ -53,7 +63,11 @@ async function updateHeaderDate() {
         return `${day}/${months[parseInt(month) - 1]}/${year}`;
     };
 
-    lastDateEl.textContent = formatDate(lastDateRaw);
+    const formattedDate = formatDate(lastDateRaw);
+    lastDateEl.textContent = formattedDate;
+    
+    const lastDateMobile = document.getElementById('lastDateMobile');
+    if (lastDateMobile) lastDateMobile.textContent = formattedDate;
     
     const avgPercentEl = document.getElementById('avgPercent');
     if (avgPercentEl) {
@@ -80,16 +94,22 @@ async function updateHeaderDate() {
             const diffDay = avg - getAvg(masterData[prevDateRaw]);
             const el = document.getElementById('avgDiffDay');
             if(el) {
-                el.textContent = `${diffDay >= 0 ? '+' : ''}${diffDay.toFixed(2)}%`;
-                el.className = `text-2xl font-semibold ${diffDay >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                const prefix = diffDay >= 0 ? '+' : '';
+                const colorClass = diffDay >= 0 ? 'text-emerald-600' : 'text-red-500';
+                const arrow = diffDay >= 0 ? '↑' : '↓';
+                el.textContent = `${prefix}${diffDay.toFixed(2)}% ${arrow}`;
+                el.className = `text-3xl font-bold ${colorClass}`;
             }
         }
         if (masterData[monthAgoDateRaw]) {
             const diffMonth = avg - getAvg(masterData[monthAgoDateRaw]);
             const el = document.getElementById('avgDiffMonth');
             if(el) {
-                el.textContent = `${diffMonth >= 0 ? '+' : ''}${diffMonth.toFixed(2)}%`;
-                el.className = `text-2xl font-semibold ${diffMonth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                const prefix = diffMonth >= 0 ? '+' : '';
+                const colorClass = diffMonth >= 0 ? 'text-emerald-600' : 'text-red-500';
+                const arrow = diffMonth >= 0 ? '↑' : '↓';
+                el.textContent = `${prefix}${diffMonth.toFixed(2)}% ${arrow}`;
+                el.className = `text-3xl font-bold ${colorClass}`;
             }
         }
 
@@ -118,10 +138,19 @@ function renderDailyChart(date) {
             datasets: [{
                 label: 'Porcentaje (%)',
                 data: dayData.map(p => parseFloat(p.porcentaje)),
-                backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                backgroundColor: COLORS.cyan,
+                borderRadius: 6,
+                borderSkipped: false
             }]
         },
-        options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
     });
 }
 
@@ -151,7 +180,6 @@ function renderEvolutionChart() {
     const periodDays = currentPeriodEvolution === 'Infinity' ? Infinity : parseInt(currentPeriodEvolution);
     const filteredDates = dates.slice(-periodDays);
     
-    // Función auxiliar para filtrar y calcular el ponderado igual que en el header
     const getSinaloaDataForAvg = (data) => data.filter(d => 
         DAM_LOCATIONS.hasOwnProperty(d.nombre) && 
         d.nombre !== "Santa Maria" && 
@@ -179,13 +207,23 @@ function renderEvolutionChart() {
             datasets: [{
                 label: `Evolución ${currentDamEvolution === 'Todas las presas' ? 'Estatal (Ponderado)' : currentDamEvolution} (%)`,
                 data: chartData,
-                borderColor: 'rgba(59, 130, 246, 1)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.1,
-                fill: true
+                borderColor: COLORS.blue,
+                backgroundColor: COLORS.blueLight,
+                tension: 0.3,
+                fill: true,
+                pointRadius: filteredDates.length > 60 ? 0 : 3,
+                pointHoverRadius: 5,
+                borderWidth: 2
             }]
         },
-        options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } }
+            }
+        }
     });
 }
 
@@ -210,16 +248,16 @@ function renderAnnualChart() {
         const year = date.split('-')[0];
         const dayEntries = masterData[date];
         
-        let values;
+        let avgDay = 0;
         if (!currentDamAnnual) {
             values = dayEntries.map(d => parseFloat(d.porcentaje)).filter(p => !isNaN(p));
+            if (values.length > 0) avgDay = values.reduce((acc, v) => acc + v, 0) / values.length;
         } else {
             const damEntry = dayEntries.find(d => d.nombre === currentDamAnnual);
-            values = damEntry ? [parseFloat(damEntry.porcentaje)].filter(p => !isNaN(p)) : [];
+            avgDay = damEntry ? parseFloat(damEntry.porcentaje) : 0;
         }
         
-        if (values.length > 0) {
-            const avgDay = values.reduce((acc, v) => acc + v, 0) / values.length;
+        if (avgDay > 0 || !isNaN(avgDay)) {
             if (!annualData[year]) annualData[year] = [];
             annualData[year].push(avgDay);
         }
@@ -238,10 +276,19 @@ function renderAnnualChart() {
             datasets: [{
                 label: `Promedio Anual ${currentDamAnnual || 'Estatal'} (%)`,
                 data: averages,
-                backgroundColor: 'rgba(75, 192, 192, 0.7)'
+                backgroundColor: COLORS.indigo,
+                borderRadius: 6,
+                borderSkipped: false
             }]
         },
-        options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
     });
 }
 
@@ -251,7 +298,7 @@ function initMap() {
     
     myMap = L.map('map').setView([25.0, -107.5], 7);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors & CARTO',
+        attribution: '&copy; OpenStreetMap & CARTO',
         subdomains: 'abcd',
         maxZoom: 19
     }).addTo(myMap);
@@ -263,10 +310,10 @@ function initMap() {
         const loc = DAM_LOCATIONS[dam.nombre];
         if (loc) {
             const icon = L.divIcon({
-                className: 'bg-white border border-blue-500 rounded-md px-2 py-1 text-xs font-bold text-blue-800 shadow-md flex items-center justify-center whitespace-nowrap',
+                className: 'bg-white border-2 border-cyan-500 rounded-full px-2.5 py-1 text-xs font-bold text-cyan-800 shadow-lg flex items-center justify-center whitespace-nowrap',
                 html: `${dam.porcentaje}%`,
-                iconSize: [50, 26],
-                iconAnchor: [25, 13]
+                iconSize: [56, 28],
+                iconAnchor: [28, 14]
             });
             L.marker([loc.lat, loc.lon], { icon: icon })
                 .addTo(myMap)
@@ -283,7 +330,7 @@ function updateChart(canvasId, config) {
 
 function createSelect(options, selectedValue, onChange) {
     const select = document.createElement('select');
-    select.className = 'p-2 border border-slate-300 rounded-md w-full md:w-auto mr-4';
+    select.className = 'text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition w-full md:w-auto mr-3';
     if (Array.isArray(options)) {
         options.forEach(o => select.options.add(new Option(o, o)));
     } else {
@@ -297,7 +344,7 @@ function createSelect(options, selectedValue, onChange) {
 function createLabel(text) {
     const label = document.createElement('label');
     label.textContent = text;
-    label.className = "mr-2 font-medium text-slate-700";
+    label.className = "text-xs font-medium text-slate-500 mr-1";
     return label;
 }
 
