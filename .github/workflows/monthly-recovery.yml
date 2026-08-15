@@ -1,0 +1,38 @@
+name: Monthly Data Recovery
+
+on:
+  schedule:
+    - cron: '0 19 1 * *' # Día 1 de cada mes, 3h después del primer run diario (19:00 UTC = 12:00 PM Culiacán)
+    - cron: '0 21 1 * *' # Día 1 de cada mes, 3h después del segundo run diario (21:00 UTC = 2:00 PM Culiacán)
+  workflow_dispatch: # Permite ejecución manual desde la pestaña Actions
+
+permissions:
+  contents: write
+
+jobs:
+  recover-missing-days:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium
+
+      - name: Recover missing days from previous month
+        run: |
+          node scripts/revisar_dias_faltantes.js
+
+      - name: Commit and Push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Auto-update: Monthly data recovery" || echo "No changes to commit"
+          git push
