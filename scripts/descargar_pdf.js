@@ -52,7 +52,7 @@ async function descargarInforme(fechaEspecifica = null) {
                 const el = todosLosEnlaces.nth(i);
                 const title = await el.getAttribute('title') || '';
                 const text = await el.textContent() || '';
-                if (patrones.some(p => title.includes(p) || text.includes(p))) {
+                if (patrones.some(p => title.toLowerCase().includes(p.toLowerCase()) || text.toLowerCase().includes(p.toLowerCase()))) {
                     link = el;
                     break;
                 }
