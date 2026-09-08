@@ -2,8 +2,7 @@ name: Monthly Data Recovery
 
 on:
   schedule:
-    - cron: '0 19 1 * *' # Día 1 de cada mes, 3h después del primer run diario (19:00 UTC = 12:00 PM Culiacán)
-    - cron: '0 21 1 * *' # Día 1 de cada mes, 3h después del segundo run diario (21:00 UTC = 2:00 PM Culiacán)
+    - cron: '30 18 * * *' # Ejecuta todos los días a las 12:30 PM hora de Culiacán (UTC-7)
   workflow_dispatch: # Permite ejecución manual desde la pestaña Actions
 
 permissions:
