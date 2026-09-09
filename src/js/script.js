@@ -29,6 +29,45 @@ const COLORS = {
     accent: 'rgba(92, 153, 255, 0.8)'
 };
 
+// Formatea números como texto en español (separadores de miles)
+const fmtNum = (v) => Number(v).toLocaleString('es-MX', { maximumFractionDigits: 1 });
+
+// Color semántico según nivel de llenado (mejores prácticas de visualización)
+function nivelColor(pct, alpha = 1) {
+    if (pct >= 80) return `rgba(16, 185, 129, ${alpha})`;
+    if (pct >= 50) return `rgba(0, 87, 255, ${alpha})`;
+    if (pct >= 30) return `rgba(245, 158, 11, ${alpha})`;
+    return `rgba(239, 68, 68, ${alpha})`;
+}
+
+// Configuración base de Chart.js acorde al sistema de diseño del proyecto
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#64748b';
+}
+
+// Inyecta una leyenda de niveles de llenado en la tarjeta del gráfico diario
+function injectNivelLegend() {
+    const chart = document.getElementById('dailyChart');
+    if (!chart) return;
+    const card = chart.closest('section');
+    if (!card || card.querySelector('.nivel-legend')) return;
+
+    const levels = [
+        ['≥ 80%', 'rgba(16, 185, 129, 0.9)'],
+        ['50–80%', 'rgba(0, 87, 255, 0.9)'],
+        ['30–50%', 'rgba(245, 158, 11, 0.9)'],
+        ['< 30%', 'rgba(239, 68, 68, 0.9)']
+    ];
+    const legend = document.createElement('div');
+    legend.className = 'nivel-legend flex flex-wrap gap-3 mt-3 text-[11px] text-slate-500 dark:text-slate-400';
+    legend.innerHTML = levels.map(([label, color]) =>
+        `<span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:${color}"></span>${label}</span>`
+    ).join('');
+    card.querySelector('.p-6').appendChild(legend);
+}
+
 let masterData;
 let charts = {}; 
 let myMap;
@@ -117,6 +156,7 @@ async function updateHeaderDate() {
         initMap();
         initEvolutionChart();
         initAnnualChart();
+        injectNivelLegend();
     }
 }
 
@@ -130,25 +170,43 @@ function initDailyChart() {
 }
 
 function renderDailyChart(date) {
-    const dayData = masterData[date];
+    const dayData = masterData[date] || [];
+    // Ordenado de mayor a menor para leerse como ranking
+    const sorted = [...dayData].sort((a, b) => parseFloat(b.porcentaje) - parseFloat(a.porcentaje));
+
     updateChart('dailyChart', {
         type: 'bar',
         data: {
-            labels: dayData.map(p => p.nombre),
+            labels: sorted.map(p => p.nombre),
             datasets: [{
                 label: 'Porcentaje (%)',
-                data: dayData.map(p => parseFloat(p.porcentaje)),
-                backgroundColor: COLORS.primary,
+                data: sorted.map(p => parseFloat(p.porcentaje)),
+                backgroundColor: sorted.map(p => nivelColor(parseFloat(p.porcentaje))),
                 borderRadius: 6,
                 borderSkipped: false
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const dam = sorted[ctx.dataIndex];
+                            return [
+                                `Porcentaje: ${dam.porcentaje}%`,
+                                `Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³`,
+                                `Capacidad NAMO: ${fmtNum(dam.capacidadNamo)} Mm³`
+                            ];
+                        }
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { display: false } }
+                x: { beginAtZero: true, grace: '10%', grid: { color: 'rgba(100,116,139,0.15)' } },
+                y: { grid: { display: false } }
             }
         }
     });
@@ -218,9 +276,28 @@ function renderEvolutionChart() {
         },
         options: {
             responsive: true,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const date = filteredDates[ctx.dataIndex];
+                            const entry = currentDamEvolution !== 'Todas las presas'
+                                ? (masterData[date] || []).find(d => d.nombre === currentDamEvolution)
+                                : null;
+                            const base = `Nivel: ${ctx.parsed.y.toFixed(2)}%`;
+                            if (entry) return [
+                                base,
+                                `Almacenamiento: ${fmtNum(entry.almacenamientoActualMm3)} Mm³`,
+                                `Capacidad NAMO: ${fmtNum(entry.capacidadNamo)} Mm³`
+                            ];
+                            return base;
+                        }
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                y: { beginAtZero: true, suggestedMax: 100, grace: '10%', grid: { color: 'rgba(100,116,139,0.15)' } },
                 x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } }
             }
         }
@@ -276,16 +353,23 @@ function renderAnnualChart() {
             datasets: [{
                 label: `Promedio Anual ${currentDamAnnual || 'Estatal'} (%)`,
                 data: averages,
-                backgroundColor: COLORS.accent,
+                backgroundColor: averages.map(v => nivelColor(parseFloat(v))),
                 borderRadius: 6,
                 borderSkipped: false
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `Promedio anual: ${ctx.parsed.y}%`
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                y: { beginAtZero: true, suggestedMax: 100, grace: '10%', grid: { color: 'rgba(100,116,139,0.15)' } },
                 x: { grid: { display: false } }
             }
         }
@@ -308,15 +392,23 @@ function initMap() {
     lastData.forEach(dam => {
         const loc = DAM_LOCATIONS[dam.nombre];
         if (loc) {
+            const color = nivelColor(parseFloat(dam.porcentaje));
             const icon = L.divIcon({
-                className: 'bg-white dark:bg-slate-800 border-2 border-primary-500 rounded-full px-2.5 py-1 text-xs font-bold text-primary-500 shadow-lg flex items-center justify-center whitespace-nowrap',
-                html: `${dam.porcentaje}%`,
+                className: 'bg-white dark:bg-slate-800 rounded-full text-xs font-bold shadow-lg flex items-center justify-center whitespace-nowrap px-1',
+                html: `<span style="color:${color}; border:2px solid ${color}; border-radius:9999px; padding:0 6px; line-height:20px;">${dam.porcentaje}%</span>`,
                 iconSize: [56, 28],
                 iconAnchor: [28, 14]
             });
             L.marker([loc.lat, loc.lon], { icon: icon })
                 .addTo(myMap)
-                .bindPopup(`<b>${dam.nombre}</b><br>Porcentaje: ${dam.porcentaje}%`);
+                .bindPopup(
+                    `<div style="font-family:'Inter',sans-serif">` +
+                    `<b>${dam.nombre}</b><br>` +
+                    `Nivel: <b style="color:${color}">${dam.porcentaje}%</b><br>` +
+                    `Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³<br>` +
+                    `Capacidad NAMO: ${fmtNum(dam.capacidadNamo)} Mm³` +
+                    `</div>`
+                );
         }
     });
 }
