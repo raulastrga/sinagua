@@ -26,7 +26,7 @@ jobs:
 
       - name: Recover missing days from previous month
         run: |
-          node scripts/revisar_dias_faltantes.js
+          node scripts/revisar_dias_faltantes_mes_actual.js
 
       - name: Commit and Push changes
         run: |
