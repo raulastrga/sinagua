@@ -1,16 +1,15 @@
-name: Daily Data Update
+name: Monthly Data Recovery
 
 on:
   schedule:
-    - cron: '0 16 * * *' # Ejecuta todos los días a las 10:00 AM hora de Culiacán (UTC-7)
-    - cron: '0 18 * * *' # Ejecuta todos los días a las 12:00 PM hora de Culiacán (UTC-7)
+    - cron: '30 18 * * *' # Ejecuta todos los días a las 12:30 PM hora de Culiacán (UTC-7)
   workflow_dispatch: # Permite ejecución manual desde la pestaña Actions
 
 permissions:
   contents: write
 
 jobs:
-  update-data:
+  recover-missing-days:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,17 +24,14 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install chromium
 
-      - name: Run Data Pipeline
+      - name: Recover missing days from previous month
         run: |
-          node scripts/descargar_pdf.js
-          node scripts/extraer_texto_robusto.js
-          node scripts/convertir_a_json_2026.js
-          node scripts/aggregate_data.js
+          node scripts/revisar_dias_faltantes.js
 
       - name: Commit and Push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Auto-update: Daily dam data" || echo "No changes to commit"
+          git commit -m "Auto-update: Monthly data recovery" || echo "No changes to commit"
           git push
