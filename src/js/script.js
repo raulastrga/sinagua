@@ -76,6 +76,37 @@ let myMap;
 let currentDamEvolution = 'Todas las presas';
 let currentPeriodEvolution = 90;
 let currentDamAnnual = null;
+let currentDailyDate = null;
+let dailyMetric = 'pct'; // 'pct' | 'mm3'
+let currentComparativaDam = null;
+
+const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const YEAR_PALETTE = ['#94a3b8', '#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#2dd4bf', '#fb923c', '#f87171'];
+
+// Día del año (1-366) para una fecha dada
+function dayOfYearFromDate(date) {
+    const start = new Date(date.getFullYear(), 0, 0);
+    return Math.floor((date - start) / 86400000);
+}
+
+function dayOfYearToDate(doy) {
+    const ref = new Date(2001, 0, 1);
+    ref.setDate(ref.getDate() + doy - 1);
+    return ref;
+}
+
+// Promedio estatal ponderado por capacidad NAMO (presas de Sinaloa)
+function estadoAvg(dayEntries) {
+    if (!Array.isArray(dayEntries)) return null;
+    const filtered = dayEntries.filter(d =>
+        DAM_LOCATIONS.hasOwnProperty(d.nombre) &&
+        d.nombre !== "Santa Maria" &&
+        d.nombre !== "Picachos"
+    );
+    const sumAlmacenamiento = filtered.reduce((acc, p) => acc + parseFloat(p.almacenamientoActualMm3), 0);
+    const sumCapacidad = filtered.reduce((acc, p) => acc + parseFloat(p.capacidadNamo), 0);
+    return sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : null;
+}
 
 async function fetchData() {
     const timestamp = new Date().getTime();
@@ -170,6 +201,7 @@ async function updateHeaderDate() {
         initMap();
         initEvolutionChart();
         initAnnualChart();
+        initComparativaChart();
         injectNivelLegend();
     }
 }
@@ -178,23 +210,57 @@ function initDailyChart() {
     const filterContainer = document.getElementById('dailyFilter');
     if (!filterContainer) return;
     const dates = Object.keys(masterData).sort().reverse();
-    const select = createSelect(dates, dates[0], (e) => renderDailyChart(e.target.value));
+    currentDailyDate = dates[0];
+    const select = createSelect(dates, currentDailyDate, (e) => {
+        currentDailyDate = e.target.value;
+        renderDailyChart(currentDailyDate);
+    });
     filterContainer.appendChild(select);
-    renderDailyChart(dates[0]);
+    filterContainer.appendChild(createMetricToggle());
+    renderDailyChart(currentDailyDate);
+}
+
+function createMetricToggle() {
+    const wrap = document.createElement('div');
+    wrap.className = 'inline-flex rounded-lg overflow-hidden border border-cream-200 dark:border-slate-600 text-xs mt-2 md:mt-0 md:ml-1';
+    const activeCls = 'bg-primary-500 text-white';
+    const idleCls = 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300';
+    const update = () => {
+        wrap.querySelectorAll('button').forEach(b => {
+            b.className = 'px-3 py-1.5 font-medium transition ' + (b.dataset.val === dailyMetric ? activeCls : idleCls);
+        });
+    };
+    [['pct', '% NAMO'], ['mm3', 'Volumen (Mm³)']].forEach(([val, label]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.val = val;
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+            dailyMetric = val;
+            update();
+            renderDailyChart(currentDailyDate);
+        });
+        wrap.appendChild(btn);
+    });
+    update();
+    return wrap;
 }
 
 function renderDailyChart(date) {
     const dayData = masterData[date] || [];
-    // Ordenado de mayor a menor para leerse como ranking
-    const sorted = [...dayData].sort((a, b) => parseFloat(b.porcentaje) - parseFloat(a.porcentaje));
+    const isMm3 = dailyMetric === 'mm3';
+    const getVal = (p) => isMm3 ? parseFloat(p.almacenamientoActualMm3) : parseFloat(p.porcentaje);
+
+    // Ordenado de mayor a menor según la métrica activa
+    const sorted = [...dayData].sort((a, b) => getVal(b) - getVal(a));
 
     updateChart('dailyChart', {
         type: 'bar',
         data: {
             labels: sorted.map(p => p.nombre),
             datasets: [{
-                label: 'Porcentaje (%)',
-                data: sorted.map(p => parseFloat(p.porcentaje)),
+                label: isMm3 ? 'Almacenamiento (Mm³)' : 'Porcentaje (%)',
+                data: sorted.map(getVal),
                 backgroundColor: sorted.map(p => nivelColor(parseFloat(p.porcentaje))),
                 borderRadius: 6,
                 borderSkipped: false
@@ -209,17 +275,22 @@ function renderDailyChart(date) {
                     callbacks: {
                         label: (ctx) => {
                             const dam = sorted[ctx.dataIndex];
-                            return [
-                                `Porcentaje: ${dam.porcentaje}%`,
-                                `Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³`,
-                                `Capacidad NAMO: ${fmtNum(dam.capacidadNamo)} Mm³`
-                            ];
+                            const lines = isMm3
+                                ? [`Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³`, `Porcentaje: ${dam.porcentaje}%`]
+                                : [`Porcentaje: ${dam.porcentaje}%`, `Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³`];
+                            lines.push(`Capacidad NAMO: ${fmtNum(dam.capacidadNamo)} Mm³`);
+                            return lines;
                         }
                     }
                 }
             },
             scales: {
-                x: { beginAtZero: true, grace: '10%', grid: { color: 'rgba(100,116,139,0.15)' } },
+                x: {
+                    beginAtZero: true,
+                    grace: '10%',
+                    grid: { color: 'rgba(100,116,139,0.15)' },
+                    ticks: isMm3 ? { maxTicksLimit: 7, callback: (v) => fmtNum(v) } : { maxTicksLimit: 7 }
+                },
                 y: { grid: { display: false } }
             }
         }
@@ -385,6 +456,96 @@ function renderAnnualChart() {
             scales: {
                 y: { beginAtZero: true, suggestedMax: 100, grace: '10%', grid: { color: 'rgba(100,116,139,0.15)' } },
                 x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function initComparativaChart() {
+    const filterContainer = document.getElementById('comparativaFilter');
+    if (!filterContainer) return;
+    const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
+    const options = ['Todas las presas', ...dams];
+
+    const select = createSelect(options, 'Todas las presas', (e) => {
+        currentComparativaDam = e.target.value === 'Todas las presas' ? null : e.target.value;
+        renderComparativaChart();
+    });
+
+    filterContainer.append(createLabel("Presa: "), select);
+    renderComparativaChart();
+}
+
+function renderComparativaChart() {
+    const yearsData = {};
+
+    Object.keys(masterData).sort().forEach(date => {
+        const [y, m, d] = date.split('-').map(Number);
+        const doy = dayOfYearFromDate(new Date(y, m - 1, d));
+        const entries = masterData[date];
+        const val = currentComparativaDam
+            ? ((entries.find(p => p.nombre === currentComparativaDam) || {}).porcentaje ?? null)
+            : estadoAvg(entries);
+
+        if (val === null || isNaN(parseFloat(val))) return;
+        if (!yearsData[y]) yearsData[y] = [];
+        yearsData[y].push({ x: doy, y: parseFloat(val) });
+    });
+
+    const yearKeys = Object.keys(yearsData).sort();
+    const currentYear = yearKeys[yearKeys.length - 1];
+
+    const currentYearLabel = document.getElementById('comparativaCurrentYear');
+    if (currentYearLabel) currentYearLabel.textContent = currentYear;
+
+    const datasets = yearKeys.map((year, i) => {
+        const isCurrent = year === currentYear;
+        return {
+            label: year,
+            data: yearsData[year],
+            tension: 0.3,
+            borderWidth: isCurrent ? 3 : 1.5,
+            borderColor: isCurrent ? 'rgba(0, 87, 255, 0.9)' : YEAR_PALETTE[i % YEAR_PALETTE.length],
+            borderDash: isCurrent ? [] : [5, 5],
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            spanGaps: false
+        };
+    });
+
+    updateChart('comparativaChart', {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            interaction: { mode: 'nearest', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 20, boxHeight: 2, font: { size: 11 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => {
+                            const date = dayOfYearToDate(items[0].parsed.x);
+                            return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
+                        },
+                        label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: 1,
+                    max: 366,
+                    grid: { color: 'rgba(100,116,139,0.15)' },
+                    ticks: {
+                        maxTicksLimit: 12,
+                        callback: (value) => MONTHS_SHORT[dayOfYearToDate(value).getMonth()]
+                    }
+                },
+                y: { beginAtZero: true, suggestedMax: 100, grace: '10%', grid: { color: 'rgba(100,116,139,0.15)' } }
             }
         }
     });
