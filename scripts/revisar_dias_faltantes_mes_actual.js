@@ -1,6 +1,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { fechasEnDataJson } = require('./constantes');
 
 // ============================================================
 // Script de recuperación: revisa src/data/data.json y detecta
@@ -14,8 +15,7 @@ if (!fs.existsSync(dataJsonPath)) {
     process.exit(1);
 }
 
-const dataJson = JSON.parse(fs.readFileSync(dataJsonPath, 'utf8'));
-const existingDates = new Set(Object.keys(dataJson));
+const existingDates = new Set(fechasEnDataJson(dataJsonPath));
 console.log(`Fechas existentes en data.json: ${existingDates.size}`);
 
 // 2. Determinar el mes actual a la fecha de ejecución
@@ -30,9 +30,17 @@ function daysInMonth(y, m) {
 }
 
 // 3. Generar todos los días del mes actual y detectar faltantes
+const hoy = new Date();
+hoy.setHours(0, 0, 0, 0);
 const allDays = [];
+let diasFuturos = 0;
 const totalDays = daysInMonth(year, month);
 for (let d = 1; d <= totalDays; d++) {
+    const fecha = new Date(year, month, d);
+    if (fecha > hoy) {
+        diasFuturos++;
+        continue;
+    }
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     if (!existingDates.has(dateStr)) {
         allDays.push(dateStr);
@@ -40,7 +48,7 @@ for (let d = 1; d <= totalDays; d++) {
 }
 
 console.log(`\nMes a analizar: ${monthLabel} (${totalDays} días)`);
-console.log(`Días faltantes encontrados: ${allDays.length}`);
+console.log(`Días faltantes encontrados: ${allDays.length}${diasFuturos > 0 ? ` (${diasFuturos} días futuros omitidos)` : ''}`);
 
 if (allDays.length === 0) {
     console.log('\nNo hay días faltantes. Finalizando.');
@@ -49,8 +57,14 @@ if (allDays.length === 0) {
 
 console.log(`Días faltantes: ${allDays.join(', ')}\n`);
 
+function rutaPdfDeFecha(date) {
+    const [a, m, d] = date.split('-');
+    return path.join(process.cwd(), 'data', a, `INFORME-${d}-${m}-${a.slice(2)}-PRESAS.pdf`);
+}
+
 // 4. Intentar recuperar cada día faltante con el pipeline
 let recuperados = 0;
+const fallidos = [];
 for (const date of allDays) {
     console.log(`\n--- Procesando día faltante: ${date} ---`);
     try {
@@ -58,13 +72,20 @@ for (const date of allDays) {
         execSync(`node scripts/descargar_pdf.js "${date}"`, { stdio: 'inherit' });
         // Extraer el texto del PDF
         execSync(`node scripts/extraer_texto_robusto.js "${date}"`, { stdio: 'inherit' });
-        recuperados++;
+        if (fs.existsSync(rutaPdfDeFecha(date))) {
+            recuperados++;
+        } else {
+            fallidos.push(date);
+            console.log(`Día ${date}: no se encontró el PDF`);
+        }
     } catch (error) {
+        fallidos.push(date);
         console.log(`No se pudo recuperar el día ${date}: ${error.message}`);
     }
 }
 
 console.log(`\n=== Días recuperados: ${recuperados} de ${allDays.length} ===`);
+if (fallidos.length > 0) console.log(`Días no recuperados: ${fallidos.join(', ')}`);
 
 // 5. Convertir los textos recuperados a JSON (procesa todos los docs del año)
 console.log('\n--- Convirtiendo textos a JSON ---');

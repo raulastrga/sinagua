@@ -1,24 +1,3 @@
-// Función auxiliar para convertir DMS a decimal
-function dmsToDecimal(d, m, s) {
-    return d + (m / 60) + (s / 3600);
-}
-
-const DAM_LOCATIONS = {
-    "Luis Donaldo Colosio": { lat: dmsToDecimal(26, 50, 40), lon: -dmsToDecimal(108, 22, 5) },
-    "Miguel Hidalgo y Costilla": { lat: dmsToDecimal(26, 30, 32), lon: -dmsToDecimal(108, 34, 49) },
-    "Josefa Ortiz de Domínguez": { lat: dmsToDecimal(26, 27, 43), lon: -dmsToDecimal(108, 42, 3) },
-    "Gustavo Díaz Ordaz": { lat: dmsToDecimal(25, 47, 33), lon: -dmsToDecimal(107, 54, 34) },
-    "Guillermo Blake Aguilar": { lat: dmsToDecimal(26, 9, 0), lon: -dmsToDecimal(108, 17, 0) },
-    "Eustaquio Buelna": { lat: dmsToDecimal(25, 29, 48), lon: -dmsToDecimal(108, 3, 7) },
-    "Adolfo López Mateos": { lat: dmsToDecimal(25, 5, 59), lon: -dmsToDecimal(107, 23, 16) },
-    "Sanalona": { lat: dmsToDecimal(24, 48, 51), lon: -dmsToDecimal(107, 9, 5) },
-    "Juan Guerrero Alcocer": { lat: dmsToDecimal(24, 37, 35), lon: -dmsToDecimal(107, 9, 38) },
-    "José López Portillo": { lat: dmsToDecimal(24, 5, 48), lon: -dmsToDecimal(106, 46, 21) },
-    "Aurelio Benassini V.": { lat: dmsToDecimal(23, 59, 21), lon: -dmsToDecimal(106, 34, 12) },
-    "Santa Maria": { lat: dmsToDecimal(23, 10, 0), lon: -dmsToDecimal(105, 40, 42) },
-    "Picachos": { lat: dmsToDecimal(23, 28, 41), lon: -dmsToDecimal(106, 13, 25) }
-};
-
 // Paleta de colores del proyecto
 const COLORS = {
     primary: 'rgba(0, 87, 255, 0.8)',
@@ -26,14 +5,25 @@ const COLORS = {
     secondary: 'rgba(0, 87, 255, 0.5)',
     success: 'rgba(16, 185, 129, 0.8)',
     danger: 'rgba(239, 68, 68, 0.8)',
-    accent: 'rgba(92, 153, 255, 0.8)'
+    accent: 'rgba(92, 153, 255, 0.8)',
+    gray: 'rgba(148, 163, 184, 0.9)',
+    overflow: 'rgba(129, 140, 248, 0.9)'
 };
 
-// Formatea números como texto en español (separadores de miles)
-const fmtNum = (v) => Number(v).toLocaleString('es-MX', { maximumFractionDigits: 1 });
+const DAY_MS = 86400000;
+const GAP_UMBRAL_DIAS = 7; // huecos mayores a 7 días se marcan de otro color
 
-// Color semántico según nivel de llenado (mejores prácticas de visualización)
+const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const YEAR_PALETTE = ['#94a3b8', '#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#2dd4bf', '#fb923c', '#f87171'];
+
+// Formatea números como texto en español (separadores de miles)
+const fmtNum = (v) => (v === null || v === undefined ? '—' : Number(v).toLocaleString('es-MX', { maximumFractionDigits: 2 }));
+
+// Color semántico según nivel de llenado.
+//  > 100 → desborde (por encima de NAMO) | null → sin dato
 function nivelColor(pct, alpha = 1) {
+    if (pct === null || pct === undefined || Number.isNaN(pct)) return `rgba(148, 163, 184, ${alpha})`;
+    if (pct > 100) return `rgba(129, 140, 248, ${alpha})`;
     if (pct >= 80) return `rgba(16, 185, 129, ${alpha})`;
     if (pct >= 50) return `rgba(0, 87, 255, ${alpha})`;
     if (pct >= 30) return `rgba(245, 158, 11, ${alpha})`;
@@ -47,6 +37,37 @@ if (typeof Chart !== 'undefined') {
     Chart.defaults.color = '#64748b';
 }
 
+let datos;              // data.json  (series dinámicas)
+let presas;             // presas.json (metadatos estáticos)
+let presasById = new Map();
+let periodoPorFecha = new Map();
+let fechas = [];
+let charts = {};
+let myMap;
+
+// Variables de estado
+let currentDamEvolution = '';     // '' = Todas las presas
+let currentPeriodEvolution = 90;
+let currentDamAnnual = '';
+let currentComparativaDam = '';
+let currentDailyDate = null;
+let dailyMetric = 'pct';          // 'pct' | 'mm3'
+
+// Día del año (1-366) para una fecha dada
+function dayOfYearFromDate(date) {
+    const start = new Date(date.getFullYear(), 0, 0);
+    return Math.floor((date - start) / DAY_MS);
+}
+
+function dayOfYearToDate(doy) {
+    const ref = new Date(2001, 0, 1);
+    ref.setDate(ref.getDate() + doy - 1);
+    return ref;
+}
+
+const nombreDe = (id) => (presasById.get(id) || {}).nombre || id;
+const metaDe = (id) => presasById.get(id) || {};
+
 // Inyecta una leyenda de niveles de llenado en la tarjeta del gráfico diario
 function injectNivelLegend() {
     const chart = document.getElementById('dailyChart');
@@ -55,10 +76,12 @@ function injectNivelLegend() {
     if (!card || card.querySelector('.nivel-legend')) return;
 
     const levels = [
+        ['> 100% (desborde)', 'rgba(129, 140, 248, 0.9)'],
         ['≥ 80%', 'rgba(16, 185, 129, 0.9)'],
         ['50–80%', 'rgba(0, 87, 255, 0.9)'],
         ['30–50%', 'rgba(245, 158, 11, 0.9)'],
-        ['< 30%', 'rgba(239, 68, 68, 0.9)']
+        ['< 30%', 'rgba(239, 68, 68, 0.9)'],
+        ['sin dato', 'rgba(148, 163, 184, 0.9)']
     ];
     const legend = document.createElement('div');
     legend.className = 'nivel-legend flex flex-wrap gap-3 mt-3 text-[11px] text-slate-500 dark:text-slate-400';
@@ -68,134 +91,80 @@ function injectNivelLegend() {
     card.querySelector('.p-6').appendChild(legend);
 }
 
-let masterData;
-let charts = {}; 
-let myMap;
-
-// Variables de estado
-let currentDamEvolution = 'Todas las presas';
-let currentPeriodEvolution = 90;
-let currentDamAnnual = null;
-let currentDailyDate = null;
-let dailyMetric = 'pct'; // 'pct' | 'mm3'
-let currentComparativaDam = null;
-
-const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const YEAR_PALETTE = ['#94a3b8', '#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#2dd4bf', '#fb923c', '#f87171'];
-
-// Día del año (1-366) para una fecha dada
-function dayOfYearFromDate(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    return Math.floor((date - start) / 86400000);
+// ============================================================
+// Carga de datos (data.json + presas.json)
+// ============================================================
+async function fetchJson(rel) {
+    const ts = new Date().getTime();
+    try {
+        const r1 = await fetch(`/sinagua/${rel}?t=${ts}`);
+        if (r1.ok) return await r1.json();
+    } catch (_) { /* fallback */ }
+    const r2 = await fetch(`../${rel}?t=${ts}`);
+    if (!r2.ok) throw new Error(`No se pudo cargar ${rel}`);
+    return await r2.json();
 }
 
-function dayOfYearToDate(doy) {
-    const ref = new Date(2001, 0, 1);
-    ref.setDate(ref.getDate() + doy - 1);
-    return ref;
+async function cargarDatos() {
+    const [d, p] = await Promise.all([
+        fetchJson('src/data/data.json'),
+        fetchJson('src/data/presas.json')
+    ]);
+    datos = d;
+    presas = p;
+    presasById = new Map(p.presas.map(x => [x.id, x]));
+    periodoPorFecha = new Map(d.periodos.map(x => [x.fecha, x]));
+    fechas = d.periodos.map(x => x.fecha); // ordenadas ascendente
 }
 
-// Promedio estatal ponderado por capacidad NAMO (presas de Sinaloa)
-function estadoAvg(dayEntries) {
-    if (!Array.isArray(dayEntries)) return null;
-    const filtered = dayEntries.filter(d =>
-        DAM_LOCATIONS.hasOwnProperty(d.nombre) &&
-        d.nombre !== "Santa Maria" &&
-        d.nombre !== "Picachos"
-    );
-    const sumAlmacenamiento = filtered.reduce((acc, p) => acc + parseFloat(p.almacenamientoActualMm3), 0);
-    const sumCapacidad = filtered.reduce((acc, p) => acc + parseFloat(p.capacidadNamo), 0);
-    return sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : null;
-}
-
-async function fetchData() {
-    const timestamp = new Date().getTime();
-    const response = await fetch(`/sinagua/src/data/data.json?t=${timestamp}`);
-    
-    if (!response.ok) {
-        const response2 = await fetch(`../src/data/data.json?t=${timestamp}`);
-        return await response2.json();
-    }
-    return await response.json();
-}
+const periodoDe = (date) => periodoPorFecha.get(date) || { fecha: date, promedio: null, presas: [] };
 
 async function updateHeaderDate() {
     const lastDateEl = document.getElementById('lastDate');
     if (!lastDateEl) return;
 
-    masterData = await fetchData();
-    const dates = Object.keys(masterData).sort();
-    const lastDateRaw = dates[dates.length - 1];
+    await cargarDatos();
 
-    const formatDate = (dateString) => {
-        const [year, month, day] = dateString.split('-');
-        const months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-        return `${day}/${months[parseInt(month) - 1]}/${year}`;
+    const lastRaw = fechas[fechas.length - 1];
+    const formatDate = (s) => {
+        const [y, m, d] = s.split('-');
+        const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        return `${d}/${months[parseInt(m) - 1]}/${y}`;
     };
+    const formatted = formatDate(lastRaw);
+    lastDateEl.textContent = formatted;
 
-    const formattedDate = formatDate(lastDateRaw);
-    lastDateEl.textContent = formattedDate;
-    
     const lastDateMobile = document.getElementById('lastDateMobile');
-    if (lastDateMobile) lastDateMobile.textContent = formattedDate;
+    if (lastDateMobile) lastDateMobile.textContent = formatted;
 
-    const updateIndicator = (el) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const [ly, lm, ld] = lastDateRaw.split('-').map(Number);
-        const lastDate = new Date(ly, lm - 1, ld);
-        const daysDiff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-        if (daysDiff >= 2) el.classList.replace('bg-success-500', 'bg-danger-500');
-    };
-
-    const indicatorEl = document.getElementById('lastUpdateIndicator');
-    if (indicatorEl) updateIndicator(indicatorEl);
-    const indicatorMobileEl = document.getElementById('lastUpdateIndicatorMobile');
-    if (indicatorMobileEl) updateIndicator(indicatorMobileEl);
-    
-    const avgPercentEl = document.getElementById('avgPercent');
-    if (avgPercentEl) {
-        const getSinaloaDataForAvg = (data) => data.filter(d => 
-            DAM_LOCATIONS.hasOwnProperty(d.nombre) && 
-            d.nombre !== "Santa Maria" && 
-            d.nombre !== "Picachos"
-        );
-        
-        const getAvg = (data) => {
-            const filtered = getSinaloaDataForAvg(data);
-            const sumAlmacenamiento = filtered.reduce((acc, p) => acc + parseFloat(p.almacenamientoActualMm3), 0);
-            const sumCapacidad = filtered.reduce((acc, p) => acc + parseFloat(p.capacidadNamo), 0);
-            return sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : 0;
+    const avgEl = document.getElementById('avgPercent');
+    if (avgEl) {
+        const avg = (idx) => {
+            if (idx < 0 || idx >= fechas.length) return null;
+            const p = periodoDe(fechas[idx]);
+            return typeof p.promedio === 'number' ? p.promedio : null;
         };
-        
-        const avg = getAvg(masterData[lastDateRaw]);
-        avgPercentEl.textContent = `${avg.toFixed(1)} %`;
+        const v = avg(fechas.length - 1);
+        avgEl.textContent = v !== null ? `${v.toFixed(1)} %` : '— %';
 
-        const prevDateRaw = dates[dates.length - 2];
-        const monthAgoDateRaw = dates[dates.length - 31];
-        
-        if (masterData[prevDateRaw]) {
-            const diffDay = avg - getAvg(masterData[prevDateRaw]);
-            const el = document.getElementById('avgDiffDay');
-            if(el) {
-                const prefix = diffDay >= 0 ? '+' : '';
-                const colorClass = diffDay >= 0 ? 'text-success-500' : 'text-danger-500';
-                const arrow = diffDay >= 0 ? '↑' : '↓';
-                el.textContent = `${prefix}${diffDay.toFixed(2)}% ${arrow}`;
-                el.className = `text-3xl font-bold ${colorClass}`;
+        const aplicarDiff = (idEl, fromIdx) => {
+            const el = document.getElementById(idEl);
+            if (!el) return;
+            const anti = avg(fromIdx);
+            if (v === null || anti === null) {
+                el.textContent = '—';
+                el.className = 'text-3xl font-bold text-slate-800 dark:text-slate-100';
+                return;
             }
-        }
-        if (masterData[monthAgoDateRaw]) {
-            const diffMonth = avg - getAvg(masterData[monthAgoDateRaw]);
-            const el = document.getElementById('avgDiffMonth');
-            if(el) {
-                const prefix = diffMonth >= 0 ? '+' : '';
-                const colorClass = diffMonth >= 0 ? 'text-success-500' : 'text-danger-500';
-                const arrow = diffMonth >= 0 ? '↑' : '↓';
-                el.textContent = `${prefix}${diffMonth.toFixed(2)}% ${arrow}`;
-                el.className = `text-3xl font-bold ${colorClass}`;
-            }
-        }
+            const diff = v - anti;
+            const prefix = diff >= 0 ? '+' : '';
+            const colorClass = diff >= 0 ? 'text-success-500' : 'text-danger-500';
+            const arrow = diff >= 0 ? '↑' : '↓';
+            el.textContent = `${prefix}${diff.toFixed(2)}% ${arrow}`;
+            el.className = `text-3xl font-bold ${colorClass}`;
+        };
+        aplicarDiff('avgDiffDay', fechas.length - 2);
+        aplicarDiff('avgDiffMonth', fechas.length - 31);
 
         initDailyChart();
         initMap();
@@ -206,11 +175,15 @@ async function updateHeaderDate() {
     }
 }
 
+// ============================================================
+// Estado Diario (ranking horizontal)
+// ============================================================
 function initDailyChart() {
     const filterContainer = document.getElementById('dailyFilter');
     if (!filterContainer) return;
-    const dates = Object.keys(masterData).sort().reverse();
+    const dates = fechas.slice().reverse();
     currentDailyDate = dates[0];
+
     const select = createSelect(dates, currentDailyDate, (e) => {
         currentDailyDate = e.target.value;
         renderDailyChart(currentDailyDate);
@@ -247,21 +220,28 @@ function createMetricToggle() {
 }
 
 function renderDailyChart(date) {
-    const dayData = masterData[date] || [];
+    const periodo = periodoDe(date);
     const isMm3 = dailyMetric === 'mm3';
-    const getVal = (p) => isMm3 ? parseFloat(p.almacenamientoActualMm3) : parseFloat(p.porcentaje);
+    const getVal = (r) => isMm3 ? r.almacenamientoMm3 : r.porcentaje;
 
-    // Ordenado de mayor a menor según la métrica activa
-    const sorted = [...dayData].sort((a, b) => getVal(b) - getVal(a));
+    // Sin dato va al final; el resto ordenado de mayor a menor según la métrica activa
+    const sorted = (periodo.presas || []).slice()
+        .sort((a, b) => {
+            const va = getVal(a), vb = getVal(b);
+            if (va === null && vb === null) return a.id.localeCompare(b.id);
+            if (va === null) return 1;
+            if (vb === null) return -1;
+            return vb - va;
+        });
 
     updateChart('dailyChart', {
         type: 'bar',
         data: {
-            labels: sorted.map(p => p.nombre),
+            labels: sorted.map(r => nombreDe(r.id)),
             datasets: [{
                 label: isMm3 ? 'Almacenamiento (Mm³)' : 'Porcentaje (%)',
                 data: sorted.map(getVal),
-                backgroundColor: sorted.map(p => nivelColor(parseFloat(p.porcentaje))),
+                backgroundColor: sorted.map(r => nivelColor(r.porcentaje)),
                 borderRadius: 6,
                 borderSkipped: false
             }]
@@ -274,11 +254,14 @@ function renderDailyChart(date) {
                 tooltip: {
                     callbacks: {
                         label: (ctx) => {
-                            const dam = sorted[ctx.dataIndex];
+                            const r = sorted[ctx.dataIndex];
+                            const meta = metaDe(r.id);
+                            const cap = meta.capacidadNamo;
                             const lines = isMm3
-                                ? [`Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³`, `Porcentaje: ${dam.porcentaje}%`]
-                                : [`Porcentaje: ${dam.porcentaje}%`, `Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³`];
-                            lines.push(`Capacidad NAMO: ${fmtNum(dam.capacidadNamo)} Mm³`);
+                                ? [`Almacenamiento: ${fmtNum(r.almacenamientoMm3)} Mm³`, `Porcentaje: ${r.porcentaje !== null ? r.porcentaje + '%' : '—'}`]
+                                : [`Porcentaje: ${r.porcentaje !== null ? r.porcentaje + '%' : '—'}`, `Almacenamiento: ${fmtNum(r.almacenamientoMm3)} Mm³`];
+                            lines.push(`Capacidad NAMO: ${fmtNum(cap)} Mm³`);
+                            if (r.flag === 'incoherente') lines.push('Dato incoherente (excluido)');
                             return lines;
                         }
                     }
@@ -297,66 +280,77 @@ function renderDailyChart(date) {
     });
 }
 
+// ============================================================
+// Evolución Temporal
+// ============================================================
 function initEvolutionChart() {
     const filterContainer = document.getElementById('evolutionFilter');
     if (!filterContainer) return;
-    const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
-    const options = ['Todas las presas', ...dams];
 
-    const damSelect = createSelect(options, currentDamEvolution, (e) => { 
-        currentDamEvolution = e.target.value; 
-        renderEvolutionChart(); 
+    const damSelect = createSelect(opcionesPresas('Todas las presas'), currentDamEvolution, (e) => {
+        currentDamEvolution = e.target.value;
+        renderEvolutionChart();
     });
-    
+
     const periodSelect = createSelect(
         {7: '1 semana', 14: '2 semanas', 30: '1 mes', 90: '3 meses', 365: '1 año', Infinity: 'Histórico'},
         currentPeriodEvolution,
         (e) => { currentPeriodEvolution = e.target.value; renderEvolutionChart(); }
     );
-    
+
     filterContainer.append(createLabel("Presa: "), damSelect, createLabel(" Periodo: "), periodSelect);
     renderEvolutionChart();
 }
 
 function renderEvolutionChart() {
-    const dates = Object.keys(masterData).sort();
     const periodDays = currentPeriodEvolution === 'Infinity' ? Infinity : parseInt(currentPeriodEvolution);
-    const filteredDates = dates.slice(-periodDays);
-    
-    const getSinaloaDataForAvg = (data) => data.filter(d => 
-        DAM_LOCATIONS.hasOwnProperty(d.nombre) && 
-        d.nombre !== "Santa Maria" && 
-        d.nombre !== "Picachos"
-    );
-    
-    const chartData = filteredDates.map(date => {
-        const dayEntries = masterData[date];
-        
-        if (currentDamEvolution === 'Todas las presas') {
-            const filtered = getSinaloaDataForAvg(dayEntries);
-            const sumAlmacenamiento = filtered.reduce((acc, p) => acc + parseFloat(p.almacenamientoActualMm3), 0);
-            const sumCapacidad = filtered.reduce((acc, p) => acc + parseFloat(p.capacidadNamo), 0);
-            return sumCapacidad > 0 ? (sumAlmacenamiento / sumCapacidad) * 100 : null;
-        } else {
-            const dam = dayEntries.find(d => d.nombre === currentDamEvolution);
-            return dam ? parseFloat(dam.porcentaje) : null;
-        }
+    const labels = periodDays === Infinity ? fechas : fechas.slice(-periodDays);
+
+    const data = labels.map(date => {
+        const p = periodoDe(date);
+        if (currentDamEvolution === '') return typeof p.promedio === 'number' ? p.promedio : null;
+        const rec = (p.presas || []).find(r => r.id === currentDamEvolution);
+        return rec ? rec.porcentaje : null;
     });
+
+    const gapDias = (i0, i1) => {
+        const a = labels[i0], b = labels[i1];
+        if (!a || !b) return 0;
+        return Math.round((Date.parse(b) - Date.parse(a)) / DAY_MS);
+    };
+
+    const titulo = currentDamEvolution === ''
+        ? `Evolución Estatal Ponderada (%)`
+        : `Evolución ${nombreDe(currentDamEvolution)} (%)`;
 
     updateChart('evolutionChart', {
         type: 'line',
         data: {
-            labels: filteredDates,
+            labels,
             datasets: [{
-                label: `Evolución ${currentDamEvolution === 'Todas las presas' ? 'Estatal (Ponderado)' : currentDamEvolution} (%)`,
-                data: chartData,
+                label: titulo,
+                data,
                 borderColor: COLORS.primary,
                 backgroundColor: COLORS.primaryLight,
                 tension: 0.3,
                 fill: true,
-                pointRadius: filteredDates.length > 60 ? 0 : 3,
+                spanGaps: true,
+                pointRadius: labels.length > 60 ? 0 : 3,
                 pointHoverRadius: 5,
-                borderWidth: 2
+                borderWidth: 2,
+                segment: {
+                    // Marca los huecos > GAP_UMBRAL_DIAS con otro color y trazado punteado
+                    borderColor: (ctx) => {
+                        const i0 = ctx.p0DataIndex === undefined ? (ctx.p0 && ctx.p0.dataIndex) : ctx.p0DataIndex;
+                        const i1 = ctx.p1DataIndex === undefined ? (ctx.p1 && ctx.p1.dataIndex) : ctx.p1DataIndex;
+                        return gapDias(i0, i1) > GAP_UMBRAL_DIAS ? 'rgba(100,116,139,0.4)' : COLORS.primary;
+                    },
+                    borderDash: (ctx) => {
+                        const i0 = ctx.p0DataIndex === undefined ? (ctx.p0 && ctx.p0.dataIndex) : ctx.p0DataIndex;
+                        const i1 = ctx.p1DataIndex === undefined ? (ctx.p1 && ctx.p1.dataIndex) : ctx.p1DataIndex;
+                        return gapDias(i0, i1) > GAP_UMBRAL_DIAS ? [3, 4] : [];
+                    }
+                }
             }]
         },
         options: {
@@ -366,17 +360,21 @@ function renderEvolutionChart() {
                 tooltip: {
                     callbacks: {
                         label: (ctx) => {
-                            const date = filteredDates[ctx.dataIndex];
-                            const entry = currentDamEvolution !== 'Todas las presas'
-                                ? (masterData[date] || []).find(d => d.nombre === currentDamEvolution)
-                                : null;
-                            const base = `Nivel: ${ctx.parsed.y.toFixed(2)}%`;
-                            if (entry) return [
-                                base,
-                                `Almacenamiento: ${fmtNum(entry.almacenamientoActualMm3)} Mm³`,
-                                `Capacidad NAMO: ${fmtNum(entry.capacidadNamo)} Mm³`
-                            ];
-                            return base;
+                            const date = labels[ctx.dataIndex];
+                            const p = periodoDe(date);
+                            if (currentDamEvolution === '') {
+                                return `Promedio estatal: ${ctx.parsed.y.toFixed(2)}%`;
+                            }
+                            const rec = (p.presas || []).find(r => r.id === currentDamEvolution);
+                            const meta = metaDe(currentDamEvolution);
+                            if (rec && rec.almacenamientoMm3 !== null) {
+                                return [
+                                    `Nivel: ${ctx.parsed.y.toFixed(2)}%`,
+                                    `Almacenamiento: ${fmtNum(rec.almacenamientoMm3)} Mm³`,
+                                    `Capacidad NAMO: ${fmtNum(meta.capacidadNamo)} Mm³`
+                                ];
+                            }
+                            return `Sin dato`;
                         }
                     }
                 }
@@ -389,56 +387,52 @@ function renderEvolutionChart() {
     });
 }
 
+// ============================================================
+// Promedio Anual
+// ============================================================
 function initAnnualChart() {
     const filterContainer = document.getElementById('annualFilter');
     if (!filterContainer) return;
-    const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
-    const options = ['Todas las presas', ...dams];
-    
-    const select = createSelect(options, options[0], (e) => {
-        currentDamAnnual = e.target.value === 'Todas las presas' ? null : e.target.value;
+
+    const select = createSelect(opcionesPresas('Todas las presas'), '', (e) => {
+        currentDamAnnual = e.target.value;
         renderAnnualChart();
     });
-    
     filterContainer.append(createLabel("Presa: "), select);
     renderAnnualChart();
 }
 
 function renderAnnualChart() {
     const annualData = {};
-    Object.keys(masterData).forEach(date => {
-        const year = date.split('-')[0];
-        const dayEntries = masterData[date];
-        
-        let avgDay = 0;
-        if (!currentDamAnnual) {
-            values = dayEntries.map(d => parseFloat(d.porcentaje)).filter(p => !isNaN(p));
-            if (values.length > 0) avgDay = values.reduce((acc, v) => acc + v, 0) / values.length;
+    fechas.forEach(date => {
+        const year = date.slice(0, 4);
+        const p = periodoDe(date);
+        let val;
+        if (currentDamAnnual === '') {
+            val = p.promedio;
         } else {
-            const damEntry = dayEntries.find(d => d.nombre === currentDamAnnual);
-            avgDay = damEntry ? parseFloat(damEntry.porcentaje) : 0;
+            const rec = (p.presas || []).find(r => r.id === currentDamAnnual);
+            val = rec ? rec.porcentaje : null;
         }
-        
-        if (avgDay > 0 || !isNaN(avgDay)) {
-            if (!annualData[year]) annualData[year] = [];
-            annualData[year].push(avgDay);
-        }
+        if (val === null || val === undefined) return;
+        if (!annualData[year]) annualData[year] = [];
+        annualData[year].push(val);
     });
 
     const labels = Object.keys(annualData).sort();
     const averages = labels.map(year => {
         const values = annualData[year];
-        return (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+        return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100;
     });
 
     updateChart('annualChart', {
         type: 'bar',
         data: {
-            labels: labels,
+            labels,
             datasets: [{
-                label: `Promedio Anual ${currentDamAnnual || 'Estatal'} (%)`,
+                label: `Promedio Anual ${currentDamAnnual ? nombreDe(currentDamAnnual) : 'Estatal'} (%)`,
                 data: averages,
-                backgroundColor: averages.map(v => nivelColor(parseFloat(v))),
+                backgroundColor: averages.map(v => nivelColor(v)),
                 borderRadius: 6,
                 borderSkipped: false
             }]
@@ -449,7 +443,7 @@ function renderAnnualChart() {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => `Promedio anual: ${ctx.parsed.y}%`
+                        label: (ctx) => `Promedio anual: ${ctx.parsed.y.toFixed(1)}%`
                     }
                 }
             },
@@ -461,17 +455,17 @@ function renderAnnualChart() {
     });
 }
 
+// ============================================================
+// Comparativa por Año
+// ============================================================
 function initComparativaChart() {
     const filterContainer = document.getElementById('comparativaFilter');
     if (!filterContainer) return;
-    const dams = [...new Set(Object.values(masterData).flat().map(p => p.nombre))].sort();
-    const options = ['Todas las presas', ...dams];
 
-    const select = createSelect(options, 'Todas las presas', (e) => {
-        currentComparativaDam = e.target.value === 'Todas las presas' ? null : e.target.value;
+    const select = createSelect(opcionesPresas('Todas las presas'), '', (e) => {
+        currentComparativaDam = e.target.value;
         renderComparativaChart();
     });
-
     filterContainer.append(createLabel("Presa: "), select);
     renderComparativaChart();
 }
@@ -479,17 +473,21 @@ function initComparativaChart() {
 function renderComparativaChart() {
     const yearsData = {};
 
-    Object.keys(masterData).sort().forEach(date => {
+    fechas.forEach(date => {
         const [y, m, d] = date.split('-').map(Number);
         const doy = dayOfYearFromDate(new Date(y, m - 1, d));
-        const entries = masterData[date];
-        const val = currentComparativaDam
-            ? ((entries.find(p => p.nombre === currentComparativaDam) || {}).porcentaje ?? null)
-            : estadoAvg(entries);
+        const p = periodoDe(date);
 
-        if (val === null || isNaN(parseFloat(val))) return;
+        let val;
+        if (currentComparativaDam === '') {
+            val = p.promedio;
+        } else {
+            const rec = (p.presas || []).find(r => r.id === currentComparativaDam);
+            val = rec ? rec.porcentaje : null;
+        }
+        if (val === null || val === undefined) return;
         if (!yearsData[y]) yearsData[y] = [];
-        yearsData[y].push({ x: doy, y: parseFloat(val) });
+        yearsData[y].push({ x: doy, y: val });
     });
 
     const yearKeys = Object.keys(yearsData).sort();
@@ -551,41 +549,58 @@ function renderComparativaChart() {
     });
 }
 
+// ============================================================
+// Mapa
+// ============================================================
 function initMap() {
     const mapEl = document.getElementById('map');
     if (!mapEl) return;
-    
+
     myMap = L.map('map').setView([25.0, -107.5], 7);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
     }).addTo(myMap);
 
-    const lastDate = Object.keys(masterData).sort().pop();
-    const lastData = masterData[lastDate];
+    const lastPeriod = periodoDe(fechas[fechas.length - 1]);
+    const registros = new Map((lastPeriod.presas || []).map(r => [r.id, r]));
 
-    lastData.forEach(dam => {
-        const loc = DAM_LOCATIONS[dam.nombre];
-        if (loc) {
-            const color = nivelColor(parseFloat(dam.porcentaje));
-            const icon = L.divIcon({
-                className: 'bg-white dark:bg-slate-800 rounded-full text-xs font-bold shadow-lg flex items-center justify-center whitespace-nowrap px-1',
-                html: `<span style="color:${color}; border:2px solid ${color}; border-radius:9999px; padding:0 6px; line-height:20px;">${dam.porcentaje}%</span>`,
-                iconSize: [56, 28],
-                iconAnchor: [28, 14]
-            });
-            L.marker([loc.lat, loc.lon], { icon: icon })
-                .addTo(myMap)
-                .bindPopup(
-                    `<div style="font-family:'Inter',sans-serif">` +
-                    `<b>${dam.nombre}</b><br>` +
-                    `Nivel: <b style="color:${color}">${dam.porcentaje}%</b><br>` +
-                    `Almacenamiento: ${fmtNum(dam.almacenamientoActualMm3)} Mm³<br>` +
-                    `Capacidad NAMO: ${fmtNum(dam.capacidadNamo)} Mm³` +
-                    `</div>`
-                );
-        }
+    presas.presas.forEach(meta => {
+        if (meta.lat === null || meta.lon === null) return;
+        const rec = registros.get(meta.id);
+        const pct = rec ? rec.porcentaje : null;
+        const color = nivelColor(pct);
+        const texto = pct !== null ? `${pct}%` : 's/d';
+
+        const icon = L.divIcon({
+            className: 'bg-white dark:bg-slate-800 rounded-full text-xs font-bold shadow-lg flex items-center justify-center whitespace-nowrap px-1',
+            html: `<span style="color:${color}; border:2px solid ${color}; border-radius:9999px; padding:0 6px; line-height:20px;">${texto}</span>`,
+            iconSize: [56, 28],
+            iconAnchor: [28, 14]
+        });
+
+        const popup = `<div style="font-family:'Inter',sans-serif">` +
+            `<b>${meta.nombre}</b><br>` +
+            `Nivel: <b style="color:${color}">${pct !== null ? pct + '%' : 'sin dato'}</b><br>` +
+            `Almacenamiento: ${fmtNum(rec ? rec.almacenamientoMm3 : null)} Mm³<br>` +
+            `Capacidad NAMO: ${fmtNum(meta.capacidadNamo)} Mm³` +
+            `</div>`;
+
+        L.marker([meta.lat, meta.lon], { icon: icon }).addTo(myMap).bindPopup(popup);
     });
+}
+
+// ============================================================
+// Utilidades
+// ============================================================
+function opcionesPresas(prefijoTodas) {
+    const ops = [];
+    if (prefijoTodas) ops.push({ v: '', l: prefijoTodas });
+    presas.presas
+        .slice()
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+        .forEach(p => ops.push({ v: p.id, l: p.nombre }));
+    return ops;
 }
 
 function updateChart(canvasId, config) {
@@ -597,10 +612,14 @@ function updateChart(canvasId, config) {
 function createSelect(options, selectedValue, onChange) {
     const select = document.createElement('select');
     select.className = 'text-sm border border-cream-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition w-full md:w-auto mr-3';
+    const add = (val, label) => select.options.add(new Option(label, val));
     if (Array.isArray(options)) {
-        options.forEach(o => select.options.add(new Option(o, o)));
+        options.forEach(o => {
+            if (o && typeof o === 'object' && 'v' in o) add(o.v, o.l);
+            else add(o, o);
+        });
     } else {
-        Object.entries(options).forEach(([val, label]) => select.options.add(new Option(label, val)));
+        Object.entries(options).forEach(([val, label]) => add(val, label));
     }
     select.value = selectedValue;
     select.addEventListener('change', onChange);
