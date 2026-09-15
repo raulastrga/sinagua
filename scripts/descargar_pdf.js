@@ -2,134 +2,221 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
-// Navega al árbol: año -> mes, esperando las respuestas AJAX reales de wpfd
-// en lugar de sleep's fijos, con reintentos por si el tráfico es lento.
-async function navegarHastaMes(page, anio, mesNombre) {
-    const esperarResponse = (contains) => page.waitForResponse(
-        r => r.url().includes('admin-ajax.php') && r.url().includes(contains),
-        { timeout: 90000 }
-    ).catch(() => {});
+const URL_SITIO = 'https://cidh.org.mx/almacenamiento-de-presas/';
+const DEBUG_DIR = path.join(process.cwd(), 'data', 'debug');
+const MAX_INTENTOS = 3;
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-    for (let intento = 1; intento <= 3; intento++) {
-        try {
-            // 1. Seleccionar Año
-            const anioLink = page.locator(`a.wpfdcategory.catlink[title="${anio}"]`);
-            await anioLink.waitFor({ state: 'visible', timeout: 60000 });
+const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-            const categoriasListas = esperarResponse('categories.display');
-            await anioLink.click();
-            await categoriasListas;
+function asegurarDebug() {
+    fs.mkdirSync(DEBUG_DIR, { recursive: true });
+}
 
-            // 2. Seleccionar Mes (los meses se renderizan tras la respuesta AJAX del año)
-            const mesLink = page.locator(`a.wpfdcategory.catlink[title="${mesNombre}"]`);
-            await mesLink.waitFor({ state: 'visible', timeout: 90000 });
+function nombreArchivoDebug(anio, mesNum, diaNum, intento, ext) {
+    const f = `${anio}-${String(mesNum).padStart(2, '0')}-${String(diaNum).padStart(2, '0')}-intento${intento}.${ext}`;
+    return path.join(DEBUG_DIR, f);
+}
 
-            const archivosListos = esperarResponse('files.display');
-            await mesLink.click();
-            await archivosListos;
-            await page.waitForTimeout(1500);
+// Resuelve cuando llega la respuesta AJAX de WPFD esperada (o nula si tarda).
+function esperarAjax(page, marcador) {
+    return page.waitForResponse(
+        r => r.url().includes('admin-ajax.php') && r.url().includes(marcador),
+        { timeout: 45000 }
+    ).catch(() => null);
+}
 
-            try {
-                await page.waitForSelector('.wpfd_list, .wpfd-pagination', { timeout: 30000 });
-            } catch {}
-
-            return;
-        } catch (err) {
-            if (intento === 3) throw err;
-            console.log(`   Intento ${intento} fallido para '${mesNombre}', recargando página...`);
-            await page.reload({ waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(2000);
-        }
+// Espera a que exista en el DOM una categoría con el `title` exacto.
+// Usa waitForFunction (escaneo del DOM) en vez de waitFor('visible'), porque
+// algunos re-renders o estilos CSS impiden que el selector se considere visible.
+async function esperarCategoria(page, titulo, timeoutMs) {
+    try {
+        await page.waitForFunction(
+            (t) => [...document.querySelectorAll('a.wpfdcategory.catlink')].some(a => (a.getAttribute('title') || '').trim() === t),
+            titulo,
+            { timeout: timeoutMs, polling: 250 }
+        );
+        return true;
+    } catch (e) {
+        return false;
     }
 }
 
-async function descargarInforme(fechaEspecifica = null) {
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+async function titulosCategorias(page) {
+    return page.$$eval(
+        'a.wpfdcategory.catlink',
+        els => els.map(e => (e.getAttribute('title') || e.textContent || '').trim()).filter(Boolean)
+    ).catch(() => []);
+}
 
-    try {
-        console.log(`\n--- Iniciando descarga para: ${fechaEspecifica || 'Hoy'} ---`);
-        await page.goto('https://cidh.org.mx/almacenamiento-de-presas/', { waitUntil: 'domcontentloaded' });
+// Vuelve a la pantalla de meses (clic en "Atras" si hay una subcarpeta abierta).
+async function volverAListaMeses(page) {
+    const back = page.locator('a.catlink.backcategory');
+    if (await back.count() > 0) {
+        await back.first().click();
+        await page.waitForTimeout(800);
+    }
+}
 
-        // Parsear la fecha como partes locales para evitar desfases de zona horaria
-        // (new Date('YYYY-MM-DD') interpreta UTC y el mes/día pueden desplazarse).
-        const [anio, mesNum, diaNum] = fechaEspecifica
-            ? fechaEspecifica.split('-').map(Number)
-            : (() => { const n = new Date(); return [n.getFullYear(), n.getMonth() + 1, n.getDate()]; })();
-        const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-        const mesNombre = meses[mesNum - 1];
-        const mesCapitalizado = mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1);
+async function abrirAnio(page, anio) {
+    await page.goto(URL_SITIO, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    if (!await esperarCategoria(page, String(anio), 45000)) {
+        throw new Error(`No apareció el enlace del año ${anio}`);
+    }
+    const resp = esperarAjax(page, 'categories.display');
+    await page.locator(`a.wpfdcategory.catlink[title="${anio}"]`).click();
+    await resp;
+}
 
-        console.log(`Buscando año: ${anio} y mes: ${mesCapitalizado}...`);
-        await navegarHastaMes(page, anio, mesCapitalizado);
+// Abre un mes concreto y busca el informe en sus archivos.
+async function abrirMesYBuscar(page, mes, patrones) {
+    const resp = esperarAjax(page, 'files.display');
+    await page.locator(`a.wpfdcategory.catlink[title="${mes}"]`).click();
+    await resp;
+    await page.waitForTimeout(1500);
+    await page.waitForSelector('a.wpfd_downloadlink, .wpfd_list, .wpfd-pagination', { timeout: 25000 }).catch(() => {});
+    return buscarEnlace(page, patrones);
+}
 
-        const diaStr = String(diaNum).padStart(2, '0');
-        const mesStr = String(mesNum).padStart(2, '0');
-        const anioShort = String(anio).slice(-2);
-        
-        const formatoFecha = `${diaStr}-${mesStr}-${anioShort}`;
-        const patrones = [formatoFecha, `${diaStr}-${mesStr}-${anio}`];
-        
-        console.log(`Buscando informe con fecha: ${formatoFecha}`);
-        
-        let link = null;
-        let paginas = 1;
-
-        // Bucle de paginación
-        while (true) {
-            console.log(`Buscando en página ${paginas}...`);
-            const todosLosEnlaces = page.locator('a.wpfd_downloadlink');
-            const count = await todosLosEnlaces.count();
-            
-            for (let i = 0; i < count; i++) {
-                const el = todosLosEnlaces.nth(i);
-                const title = await el.getAttribute('title') || '';
-                const text = await el.textContent() || '';
-                if (patrones.some(p => title.toLowerCase().includes(p.toLowerCase()) || text.toLowerCase().includes(p.toLowerCase()))) {
-                    link = el;
-                    break;
-                }
-            }
-
-            if (link) break;
-
-            // Intentar ir a la siguiente página
-            const nextButton = page.locator('a.next.page-numbers');
-            if (await nextButton.count() > 0) {
-                await nextButton.click();
-                await page.waitForTimeout(2000); // Esperar a que cargue la nueva página
-                paginas++;
-            } else {
-                break; // No hay más páginas
+// Busca un enlace cuyo título o texto coincida con alguno de los patrones (con paginación).
+async function buscarEnlace(page, patrones) {
+    let paginas = 1;
+    while (true) {
+        const links = page.locator('a.wpfd_downloadlink');
+        const n = await links.count();
+        for (let i = 0; i < n; i++) {
+            const el = links.nth(i);
+            const title = (await el.getAttribute('title')) || '';
+            const text = (await el.textContent()) || '';
+            if (patrones.some(p => title.toLowerCase().includes(p.toLowerCase()) || text.toLowerCase().includes(p.toLowerCase()))) {
+                return el;
             }
         }
+        const next = page.locator('a.next.page-numbers, a.page-numbers[rel="next"]');
+        if (await next.count() > 0) {
+            await next.first().click();
+            await page.waitForTimeout(2000);
+            paginas++;
+        } else {
+            break;
+        }
+    }
+    return null;
+}
 
-        if (link) {
-            const title = await link.getAttribute('title');
+/*
+ * Navega el árbol año -> mes y descarga el informe.
+ * devuelve { ok, link } donde link es null si no encontró el archivo.
+ * Si el mes esperado no está listado, intenta buscar el archivo en los demás meses visibles.
+ */
+async function descargarDesdeSitio(page, anio, mesNombre, patrones) {
+    await abrirAnio(page, anio);
+
+    const mesesVisibles = await titulosCategorias(page);
+    const candidatos = mesesVisibles.includes(mesNombre) ? [mesNombre] : mesesVisibles;
+
+    if (candidatos.length === 0) {
+        throw new Error(`No se listó ningún mes para ${anio}. Categorías: ${mesesVisibles.join(', ') || 'ninguna'}`);
+    }
+
+    if (!mesesVisibles.includes(mesNombre)) {
+        console.log(`   Aviso: no se encontró el mes "${mesNombre}". Probando ${candidatos.length} meses visibles...`);
+    }
+
+    for (const mes of candidatos) {
+        try {
+            await volverAListaMeses(page);
+        } catch {}
+        const link = await abrirMesYBuscar(page, mes, patrones).catch(err => {
+            console.log(`   ${mes}: ${err.message.split('\n')[0]}`);
+            return null;
+        });
+        if (link) return { ok: true, link };
+    }
+    return { ok: false, link: null };
+}
+
+async function descargarInforme(fechaEspecifica = null) {
+    const [anio, mesNum, diaNum] = fechaEspecifica
+        ? fechaEspecifica.split('-').map(Number)
+        : (() => { const n = new Date(); return [n.getFullYear(), n.getMonth() + 1, n.getDate()]; })();
+    const mesNombre = meses[mesNum - 1];
+    const mesCapitalizado = mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1);
+    const formatoFecha = `${String(diaNum).padStart(2, '0')}-${String(mesNum).padStart(2, '0')}-${String(anio).slice(-2)}`;
+    const patrones = [formatoFecha, `${String(diaNum).padStart(2, '0')}-${String(mesNum).padStart(2, '0')}-${anio}`];
+
+    asegurarDebug();
+    console.log(`\n--- Iniciando descarga para: ${fechaEspecifica || 'Hoy'} ---`);
+    console.log(`Buscando año: ${anio} y mes: ${mesCapitalizado}...`);
+
+    let ultimoError = null;
+
+    for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+        console.log(`\n[Intento ${intento}/${MAX_INTENTOS}]`);
+        const browser = await chromium.launch({
+            headless: true,
+            // --no-sandbox: necesario en algunos runners de CI (root/entornos sin sandbox)
+            // --disable-dev-shm-usage: evita problemas de /dev/shm en contenedores Linux
+            args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled']
+        });
+        const ctx = await browser.newContext({
+            locale: 'es-MX',
+            userAgent: UA,
+            viewport: { width: 1280, height: 900 }
+        });
+        const page = await ctx.newPage();
+
+        const fallosRed = [];
+        page.on('requestfailed', r => {
+            if (r.url().includes('admin-ajax.php') || r.url().includes('wpdmdl')) {
+                fallosRed.push(r.url());
+            }
+        });
+
+        try {
+            const resultado = await descargarDesdeSitio(page, anio, mesCapitalizado, patrones);
+            if (!resultado.ok) {
+                console.log(`No se encontró informe para la fecha: ${formatoFecha}`);
+                await ctx.close();
+                return false;
+            }
+
+            const link = resultado.link;
+            const title = (await link.getAttribute('title')) || '';
             console.log(`Descargando: ${title}`);
+
             const [download] = await Promise.all([
-                page.waitForEvent('download'),
+                page.waitForEvent('download', { timeout: 30000 }),
                 link.click()
             ]);
             const baseDir = path.join(process.cwd(), 'data');
             const folderPath = path.join(baseDir, String(anio));
             if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-            
             const fileName = `INFORME-${formatoFecha}-PRESAS.pdf`;
             await download.saveAs(path.join(folderPath, fileName));
             console.log(`Guardado en: ${path.join('data', String(anio), fileName)}`);
+            await ctx.close();
             return true;
-        } else {
-            console.log(`No se encontró informe para la fecha: ${formatoFecha}`);
-            return false;
-        }
+        } catch (err) {
+            ultimoError = err;
+            console.error(`   Error: ${err.message}`);
 
-    } catch (error) {
-        console.error('Error:', error.message);
-        return false;
-    } finally {
-        await browser.close();
+            // Diagnóstico para depurar en CI (se sube como artefacto en el workflow)
+            const debugBase = nombreArchivoDebug(anio, mesNum, diaNum, intento, '');
+            const cat = await titulosCategorias(page);
+            fs.writeFileSync(
+                `${debugBase}json`,
+                JSON.stringify({ error: err.message, mesBuscado: mesCapitalizado, categoriasVisibles: cat, fallosRed: fallosRed.slice(0, 25) }, null, 2)
+            );
+            await page.screenshot({ path: `${debugBase}png`, fullPage: false }).catch(() => {});
+            console.log(`   Diagnóstico guardado en data/debug/`);
+        } finally {
+            await browser.close();
+        }
     }
+
+    console.error(`No se pudo descargar tras ${MAX_INTENTOS} intentos. Último error: ${ultimoError?.message || 'desconocido'}`);
+    return false;
 }
 
 const fechaParam = process.argv[2];
