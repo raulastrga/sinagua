@@ -1,6 +1,5 @@
 {
-  "error": "No se listó ningún mes para 2026. Categorías: ninguna",
-  "mesBuscado": "Septiembre",
-  "categoriasVisibles": [],
-  "fallosRed": []
+  "error": "Archivo no encontrado en el mes indicado",
+  "mesEsperado": "Septiembre",
+  "mesesVisibles": []
 }

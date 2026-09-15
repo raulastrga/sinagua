@@ -1,5 +1,5 @@
 {
-  "error": "Archivo no encontrado en ningún mes visible",
+  "error": "Archivo no encontrado en el mes indicado",
   "mesEsperado": "Septiembre",
   "mesesVisibles": []
 }
