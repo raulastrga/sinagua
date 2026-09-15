@@ -18,46 +18,7 @@ function nombreArchivoDebug(anio, mesNum, diaNum, intento, ext) {
     return path.join(DEBUG_DIR, f);
 }
 
-// Resuelve cuando llega la respuesta AJAX de WPFD esperada (o nula si tarda).
-function esperarAjax(page, marcador) {
-    return page.waitForResponse(
-        r => r.url().includes('admin-ajax.php') && r.url().includes(marcador),
-        { timeout: 45000 }
-    ).catch(() => null);
-}
-
-// Espera a que exista en el DOM una categoría con el `title` exacto.
-// Usa waitForFunction (escaneo del DOM) en vez de waitFor('visible'), porque
-// algunos re-renders o estilos CSS impiden que el selector se considere visible.
-async function esperarCategoria(page, titulo, timeoutMs) {
-    try {
-        await page.waitForFunction(
-            (t) => [...document.querySelectorAll('a.wpfdcategory.catlink')].some(a => (a.getAttribute('title') || '').trim() === t),
-            titulo,
-            { timeout: timeoutMs, polling: 250 }
-        );
-        return true;
-    } catch (e) {
-        return false;
-    }
-}
-
-async function titulosCategorias(page) {
-    return page.$$eval(
-        'a.wpfdcategory.catlink',
-        els => els.map(e => (e.getAttribute('title') || e.textContent || '').trim()).filter(Boolean)
-    ).catch(() => []);
-}
-
-// Vuelve a la pantalla de meses (clic en "Atras" si hay una subcarpeta abierta).
-async function volverAListaMeses(page) {
-    const back = page.locator('a.catlink.backcategory');
-    if (await back.count() > 0) {
-        await back.first().click();
-        await page.waitForTimeout(800);
-    }
-}
-
+// Abre el árbol de años, hace clic en el año y espera a que el DOM muestre los meses.
 async function abrirAnio(page, anio) {
     await page.goto(URL_SITIO, { waitUntil: 'domcontentloaded', timeout: 60000 });
     if (!await esperarCategoria(page, String(anio), 45000)) {
@@ -66,6 +27,16 @@ async function abrirAnio(page, anio) {
     const resp = esperarAjax(page, 'categories.display');
     await page.locator(`a.wpfdcategory.catlink[title="${anio}"]`).click();
     await resp;
+
+    // IMPORTANTE: el AJAX responde ANTES de que el DOM inserte los <a> de los meses.
+    // Esperamos a que exista al menos un mes (cualquier .wpfdcategory.catlink con title de mes).
+    await page.waitForFunction(
+        () => [...document.querySelectorAll('a.wpfdcategory.catlink')].some(
+            a => ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+                .includes((a.getAttribute('title') || '').trim())
+        ),
+        { timeout: 30000, polling: 300 }
+    ).catch(() => {});
 }
 
 // Abre un mes concreto y busca el informe en sus archivos.

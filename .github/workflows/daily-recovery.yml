@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  recover-missing-days:
+  recover-missing-days-actual-month:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,7 +24,7 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Recover missing days from previous month
+      - name: Recover missing days from actual month
         run: |
           node scripts/revisar_dias_faltantes_mes_actual.js
 
