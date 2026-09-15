@@ -137,6 +137,19 @@ async function updateHeaderDate() {
     const lastDateMobile = document.getElementById('lastDateMobile');
     if (lastDateMobile) lastDateMobile.textContent = formatted;
 
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const [ay, am, ad] = lastRaw.split('-').map(Number);
+    const dLast = new Date(ay, am - 1, ad);
+    const diasSinActualizar = Math.floor((hoy - dLast) / 86_400_000);
+    const setIndicator = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('bg-success-500', diasSinActualizar < 2);
+        el.classList.toggle('bg-danger-500', diasSinActualizar >= 2);
+    };
+    setIndicator('lastUpdateIndicator');
+    setIndicator('lastUpdateIndicatorMobile');
+
     const avgEl = document.getElementById('avgPercent');
     if (avgEl) {
         const avg = (idx) => {
