@@ -1,0 +1,34 @@
+name: Daily Data Recovery (Directo)
+
+on:
+  schedule:
+    - cron: '30 18 * * *' # Ejecuta todos los días a las 12:30 PM hora de Culiacán (UTC-7)
+  workflow_dispatch: # Permite ejecución manual desde la pestaña Actions
+
+permissions:
+  contents: write
+
+jobs:
+  recover-missing-days-actual-month:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Recover missing days from actual month (directo)
+        run: |
+          node scripts/revisar_dias_faltantes_mes_actual_directo.js
+
+      - name: Commit and Push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Auto-update: Daily data recovery (directo)" || echo "No changes to commit"
+          git push
