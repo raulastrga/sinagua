@@ -8,15 +8,27 @@ async function getPdfjs() {
 
 async function extraerTexto(fechaParam = null) {
     const pdfjsLib = await getPdfjs();
-    const fecha = fechaParam ? new Date(fechaParam) : new Date();
     
-    const diaStr = String(fecha.getDate()).padStart(2, '0');
-    const mesStr = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anioShort = String(fecha.getFullYear()).slice(-2);
-    const anioLong = String(fecha.getFullYear());
+    let diaNum, mesNum, anioLong;
+    if (fechaParam) {
+        const parts = fechaParam.split('-').map(Number);
+        anioLong = parts[0];
+        mesNum = parts[1];
+        diaNum = parts[2];
+    } else {
+        const n = new Date();
+        anioLong = n.getFullYear();
+        mesNum = n.getMonth() + 1;
+        diaNum = n.getDate();
+    }
+    
+    const diaStr = String(diaNum).padStart(2, '0');
+    const mesStr = String(mesNum).padStart(2, '0');
+    const anioShort = String(anioLong).slice(-2);
+    const anioLongStr = String(anioLong);
     
     const nombreArchivo = `INFORME-${diaStr}-${mesStr}-${anioShort}-PRESAS.pdf`;
-    const rutaPDF = path.resolve(process.cwd(), 'data', anioLong, nombreArchivo);
+    const rutaPDF = path.resolve(process.cwd(), 'data', anioLongStr, nombreArchivo);
 
     if (!fs.existsSync(rutaPDF)) {
         console.log(`Archivo no encontrado: ${rutaPDF}`);
@@ -36,12 +48,12 @@ async function extraerTexto(fechaParam = null) {
         textoCompleto += strings.join(' ') + '\n';
     }
 
-    const docsDir = path.join(process.cwd(), 'docs', anioLong);
+    const docsDir = path.join(process.cwd(), 'docs', String(anioLong));
     if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 
     const txtFileName = `texto-${diaStr}-${mesStr}-${anioShort}.txt`;
     fs.writeFileSync(path.join(docsDir, txtFileName), textoCompleto);
-    console.log(`Éxito: Texto extraído en '${path.join('docs', anioLong, txtFileName)}'`);
+    console.log(`Éxito: Texto extraído en '${path.join('docs', String(anioLong), txtFileName)}'`);
 }
 
 const fechaParam = process.argv[2];
