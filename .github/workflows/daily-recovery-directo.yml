@@ -10,7 +10,10 @@ permissions:
 
 jobs:
   recover-missing-days-actual-month:
-    runs-on: ubuntu-latest
+    # Usa un self-hosted runner (IP residencial): el sitio cidh.org.mx
+    # bloquea las IPs de centros de datos (GitHub-hosted = Azure) con
+    # HTTP 403 al descargar los PDFs /admin-ajax.php y /download/.
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
