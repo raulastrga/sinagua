@@ -5,16 +5,20 @@ const path = require('path');
 // Descarga directa de informes de presas desde cidh.org.mx
 // sin necesidad de renderizar el sitio (sin Playwright).
 //
-// El sitio usa el plugin "WP File Download" que expone los
-// archivos mediante AJAX público (sin nonce ni cookies). Se
-// aprovecha ese patrón para:
-//   1. Listar categorías (años) desde la raíz (id=77)
-//   2. Listar categorías (meses) de un año
-//   3. Listar archivos de un mes (task=files.display)
-//   4. Descargar el PDF directamente vía el campo linkdownload
+// Estrategia doble:
+//   A) AJAX público del plugin "WP File Download" (sin nonce
+//      ni cookies): listar categorías (años/meses) y descargar
+//      vía el campo linkdownload. Rápido, funciona desde IPs
+//      normales.
+//   B) Fallback para IPs de centros de datos (GitHub Actions),
+//      donde admin-ajax.php devuelve HTTP 403: como el post_name
+//      del informe es predecible (informe-DD-MM-YY-presas), se
+//      visita la página pública /wpfd_file/<slug>/ y se extrae
+//      la URL de descarga directa /download/... desde su HTML.
 // ============================================================
 
-const AJAX_URL = 'https://cidh.org.mx/wp-admin/admin-ajax.php?juwpfisadmin=false&action=wpfd&';
+const AJAX_URL = process.env.WPFD_AJAX_URL || 'https://cidh.org.mx/wp-admin/admin-ajax.php?juwpfisadmin=false&action=wpfd&';
+const SITIO_URL = 'https://cidh.org.mx/almacenamiento-de-presas/';
 const ROOT_CATEGORY_ID = 77;
 const pageLimit = 10; // maximos por página que devuelve el plugin
 const MAX_INTENTOS = 3;
@@ -101,6 +105,62 @@ function buscarArchivo(archivos, anio, mesNum, diaNum, formatos) {
     return archivos.find(f => f.created === fechaLarga || f.created === fechaCorta) || null;
 }
 
+async function peticionTexto(url) {
+    const resp = await fetch(url, {
+        headers: {
+            'User-Agent': UA,
+            'Referer': SITIO_URL,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        },
+        signal: AbortSignal.timeout(90000)
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} en ${url}`);
+    return resp.text();
+}
+
+async function guardarPdf(destino, url) {
+    const resp = await fetch(url, {
+        headers: { 'User-Agent': UA, 'Referer': SITIO_URL },
+        signal: AbortSignal.timeout(90000)
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} al descargar ${url}`);
+    const buffer = Buffer.from(await resp.arrayBuffer());
+    fs.writeFileSync(destino, buffer);
+    return buffer.length;
+}
+
+// Slug público del informe: INFORME 15-09-26 PRESAS -> informe-15-09-26-presas
+function slugDeFecha(anio, mesNum, diaNum) {
+    const dd = String(diaNum).padStart(2, '0');
+    const mm = String(mesNum).padStart(2, '0');
+    const yy = String(anio).slice(-2);
+    return `informe-${dd}-${mm}-${yy}-presas`;
+}
+
+// Estrategia B: obtener la URL de descarga desde la página pública
+// del post /wpfd_file/<slug>/, que no depende de admin-ajax.php.
+async function descargarViaPagina(anio, mesNum, diaNum, destino) {
+    const slugBase = slugDeFecha(anio, mesNum, diaNum);
+    for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+        for (const slug of [slugBase, `${slugBase}-2`, `${slugBase}-3`]) {
+            try {
+                console.log(`   [Página /wpfd_file/${slug}/]`);
+                const html = await peticionTexto(`https://cidh.org.mx/wpfd_file/${slug}/`);
+                const m = html.match(/https:\/\/cidh\.org\.mx\/download\/[^"'<> ]+\.pdf/);
+                if (!m) throw new Error('URL de descarga no encontrada en la página');
+                console.log(`   Descargando: ${m[0]}`);
+                const bytes = await guardarPdf(destino, m[0]);
+                console.log(`   ✓ Guardado (${bytes} bytes)`);
+                return true;
+            } catch (err) {
+                console.log(`   Error página: ${err.message}`);
+            }
+        }
+        if (intento < MAX_INTENTOS) await new Promise(r => setTimeout(r, 2000));
+    }
+    return false;
+}
+
 async function descargarInforme(fechaEspecifica = null) {
     let anio, mesNum, diaNum;
     if (fechaEspecifica) {
@@ -120,11 +180,16 @@ async function descargarInforme(fechaEspecifica = null) {
     const formatoFecha = `${String(diaNum).padStart(2, '0')}-${String(mesNum).padStart(2, '0')}-${String(anio).slice(-2)}`;
     const patrones = [formatoFecha, `${String(diaNum).padStart(2, '0')}-${String(mesNum).padStart(2, '0')}-${anio}`];
 
+    const ruta = path.join(process.cwd(), 'data', String(anio));
+    if (!fs.existsSync(ruta)) fs.mkdirSync(ruta, { recursive: true });
+    const destino = path.join(ruta, `INFORME-${formatoFecha}-PRESAS.pdf`);
+
     console.log(`\n--- Descarga directa para: ${fechaEspecifica || 'Hoy'} (${mesCapitalizado} ${anio}) ---`);
 
+    // Estrategia A: AJAX del plugin (falla con 403 desde GitHub Actions)
     for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
         try {
-            console.log(`   [Intento ${intento}/${MAX_INTENTOS}]`);
+            console.log(`   [Intento ${intento}/${MAX_INTENTOS} · AJAX]`);
             const { mesId } = await obtenerIdMes(anio, mesNum);
             console.log(`   Categoría del mes encontrada (id ${mesId})`);
             const archivos = await obtenerArchivosDeMes(mesId);
@@ -132,26 +197,19 @@ async function descargarInforme(fechaEspecifica = null) {
             const archivo = buscarArchivo(archivos, anio, mesNum, diaNum, patrones);
             if (!archivo) throw new Error('Archivo no encontrado en el mes indicado');
 
-            const ruta = path.join(process.cwd(), 'data', String(anio));
-            if (!fs.existsSync(ruta)) fs.mkdirSync(ruta, { recursive: true });
-            const destino = path.join(ruta, `INFORME-${formatoFecha}-PRESAS.pdf`);
-
             console.log(`   Descargando: ${archivo.linkdownload}`);
-            const resp = await fetch(archivo.linkdownload, {
-                headers: { 'User-Agent': UA, 'Referer': 'https://cidh.org.mx/almacenamiento-de-presas/' },
-                signal: AbortSignal.timeout(90000)
-            });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status} al descargar`);
-            const buffer = Buffer.from(await resp.arrayBuffer());
-            fs.writeFileSync(destino, buffer);
-            console.log(`   ✓ Guardado (${buffer.length} bytes)`);
+            const bytes = await guardarPdf(destino, archivo.linkdownload);
+            console.log(`   ✓ Guardado (${bytes} bytes)`);
             return true;
         } catch (err) {
             console.error(`   Error intento ${intento}: ${err.message}`);
             if (intento < MAX_INTENTOS) await new Promise(r => setTimeout(r, 2000));
         }
     }
-    return false;
+
+    // Estrategia B: página pública del post (evita el bloqueo de admin-ajax)
+    console.log('   → Fallback: usando página pública /wpfd_file/<slug>/');
+    return descargarViaPagina(anio, mesNum, diaNum, destino);
 }
 
 module.exports = { descargarInforme };
