@@ -117,7 +117,7 @@ async function descargarInforme(fechaEspecifica = null) {
             
             const fileName = `INFORME-${formatoFecha}-PRESAS.pdf`;
             await download.saveAs(path.join(folderPath, fileName));
-            console.log(`Guardado en: ${path.join('data', anio, fileName)}`);
+            console.log(`Guardado en: ${path.join('data', String(anio), fileName)}`);
             return true;
         } else {
             console.log(`No se encontró informe para la fecha: ${formatoFecha}`);
