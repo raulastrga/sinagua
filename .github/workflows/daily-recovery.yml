@@ -1,4 +1,4 @@
-name: Monthly Data Recovery
+name: Daily Data Recovery
 
 on:
   schedule:
