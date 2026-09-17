@@ -13,7 +13,7 @@ jobs:
     # Usa un self-hosted runner (IP residencial): el sitio cidh.org.mx
     # bloquea las IPs de centros de datos (GitHub-hosted = Azure) con
     # HTTP 403 al descargar los PDFs /admin-ajax.php y /download/.
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
