@@ -1,0 +1,156 @@
+{
+  "estaciones": [
+    {
+      "estacion": "CHOIX",
+      "tempMax": "38.0",
+      "tempMin": "22.0",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "P.MIGUEL HIDALGO Y COSTILLA (EL MAHONE)",
+      "tempMax": "38.5",
+      "tempMin": "22.5",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "P.JOSEFA ORTIZ DE DOMINGUEZ (EL SABINO).",
+      "tempMax": "39.0",
+      "tempMin": "27.0",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "EL FUERTE",
+      "tempMax": "38.0",
+      "tempMin": "25.0",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "EL CARRIZO",
+      "tempMax": "38.0",
+      "tempMin": "26.0",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "AHOME",
+      "tempMax": "38.0",
+      "tempMin": "25.0",
+      "lluvia": "INAP."
+    },
+    {
+      "estacion": "LOS MOCHIS",
+      "tempMax": "40.0",
+      "tempMin": "27.0",
+      "lluvia": "0.5"
+    },
+    {
+      "estacion": "ADOLFO RUIZ CORTINEZ",
+      "tempMax": "33.0",
+      "tempMin": "25.0",
+      "lluvia": "5.0"
+    },
+    {
+      "estacion": "GUASAVE",
+      "tempMax": "39.5",
+      "tempMin": "27.0",
+      "lluvia": "19.0"
+    },
+    {
+      "estacion": "P.GUSTAVO DIAZ ORDAZ (BACURATO)",
+      "tempMax": "39.0",
+      "tempMin": "25.0",
+      "lluvia": "3.0"
+    },
+    {
+      "estacion": "P. GUILLERMO BLAKE ( EL SABINAL )",
+      "tempMax": "40.0",
+      "tempMin": "26.0",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "GUAMUCHIL",
+      "tempMax": "40.0",
+      "tempMin": "24.0",
+      "lluvia": "45.0"
+    },
+    {
+      "estacion": "SAN JUAN (MOCORITO)",
+      "tempMax": "39.0",
+      "tempMin": "24.0",
+      "lluvia": "30.8"
+    },
+    {
+      "estacion": "BADIRAGUATO",
+      "tempMax": "38.0",
+      "tempMin": "23.0",
+      "lluvia": "6.5"
+    },
+    {
+      "estacion": "P. ADOLFO LOPEZ MATEOS",
+      "tempMax": "38.0",
+      "tempMin": "23.0",
+      "lluvia": "5.7"
+    },
+    {
+      "estacion": "SANALONA",
+      "tempMax": "39.5",
+      "tempMin": "24.0",
+      "lluvia": "5.9"
+    },
+    {
+      "estacion": "CULIACAN",
+      "tempMax": "38.5",
+      "tempMin": "24.0",
+      "lluvia": "39.0"
+    },
+    {
+      "estacion": "OBSERVATORIO DE CULIACAN",
+      "tempMax": "38.5",
+      "tempMin": "22.5",
+      "lluvia": "11.8"
+    },
+    {
+      "estacion": "EL DORADO",
+      "tempMax": "....",
+      "tempMin": "....",
+      "lluvia": "...."
+    },
+    {
+      "estacion": "SAN LORENZO",
+      "tempMax": "....",
+      "tempMin": "....",
+      "lluvia": "...."
+    },
+    {
+      "estacion": "P. JOSE LOPEZ PORTILLO (COMEDERO)",
+      "tempMax": "36.0",
+      "tempMin": "23.0",
+      "lluvia": "4.0"
+    },
+    {
+      "estacion": "LA CRUZ DE ELOTA",
+      "tempMax": "35.0",
+      "tempMin": "24.0",
+      "lluvia": "0.0"
+    },
+    {
+      "estacion": "ACATITAN",
+      "tempMax": "40.0",
+      "tempMin": "21.0",
+      "lluvia": "8.0"
+    },
+    {
+      "estacion": "MAZATLAN",
+      "tempMax": "35.5",
+      "tempMin": "25.0",
+      "lluvia": "7.7"
+    },
+    {
+      "estacion": "EL ROSARIO",
+      "tempMax": "38.0",
+      "tempMin": "26.0",
+      "lluvia": "16.0"
+    }
+  ],
+  "sinopsis": "En el Océano Pacífico, NORBERT se mantiene como tormenta tropical, y a",
+  "pronostico": "PARA"
+}
