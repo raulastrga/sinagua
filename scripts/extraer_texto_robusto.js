@@ -1,6 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// Polyfills for Node.js
+global.DOMMatrix = class DOMMatrix {};
+global.Path2D = class Path2D {};
+
 // Dynamic import for ESM module (pdfjs-dist is ESM)
 async function getPdfjs() {
     return await import('pdfjs-dist/legacy/build/pdf.mjs');
