@@ -22,7 +22,28 @@ const SITIO_URL = 'https://cidh.org.mx/almacenamiento-de-presas/';
 const ROOT_CATEGORY_ID = 77;
 const pageLimit = 10; // maximos por página que devuelve el plugin
 const MAX_INTENTOS = 3;
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0'
+];
+
+const getRandomUA = () => USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+const wait = () => new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+
+const getHeaders = (isJson = false) => ({
+    'User-Agent': getRandomUA(),
+    'Accept': isJson ? 'application/json, text/javascript, */*; q=0.01' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+    'Referer': SITIO_URL,
+    'Sec-Fetch-Dest': isJson ? 'empty' : 'document',
+    'Sec-Fetch-Mode': isJson ? 'cors' : 'navigate',
+    'Sec-Fetch-Site': 'same-origin',
+    'DNT': '1'
+});
+
 const OMITIR_FINES_SEMANA = true;
 
 const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -38,13 +59,9 @@ function esFinDeSemana(anio, mesNum, diaNum) {
 }
 
 async function peticionJson(url) {
+    await wait();
     const resp = await fetch(url, {
-        headers: {
-            'User-Agent': UA,
-            'Referer': 'https://cidh.org.mx/almacenamiento-de-presas/',
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: getHeaders(true),
         signal: AbortSignal.timeout(60000)
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} en ${url}`);
@@ -106,12 +123,9 @@ function buscarArchivo(archivos, anio, mesNum, diaNum, formatos) {
 }
 
 async function peticionTexto(url) {
+    await wait();
     const resp = await fetch(url, {
-        headers: {
-            'User-Agent': UA,
-            'Referer': SITIO_URL,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        },
+        headers: getHeaders(false),
         signal: AbortSignal.timeout(90000)
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} en ${url}`);
@@ -119,8 +133,9 @@ async function peticionTexto(url) {
 }
 
 async function guardarPdf(destino, url) {
+    await wait();
     const resp = await fetch(url, {
-        headers: { 'User-Agent': UA, 'Referer': SITIO_URL },
+        headers: getHeaders(false),
         signal: AbortSignal.timeout(90000)
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status} al descargar ${url}`);
